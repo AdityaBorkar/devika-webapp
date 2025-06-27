@@ -1,6 +1,8 @@
 Search String:
 new URL\(".*?",\s*import\.meta\.url\)
 
+# Test comment for commit script
+
 Find:
 node_modules/@electric-sql/pglite/**
 
