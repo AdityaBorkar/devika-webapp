@@ -1,0 +1,29 @@
+# cache
+node_modules
+out
+dist
+*.tgz
+*.tsbuildinfo
+
+# code coverage
+coverage
+*.lcov
+
+# logs
+logs
+_.log
+report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
+
+# IntelliJ based IDEs
+.idea
+.DS_Store
+
+# dotenv environment variable files
+*.env
+.env*
+
+# AI
+.claude
+.cursor
+.devika
+.gemini

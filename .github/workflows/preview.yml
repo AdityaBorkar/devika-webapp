@@ -1,0 +1,211 @@
+name: Preview Deployment
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    outputs:
+      lint-status: ${{ steps.lint.outcome }}
+      types-status: ${{ steps.types.outcome }}
+      lint-output: ${{ steps.lint.outputs.stdout }}
+      types-output: ${{ steps.types.outputs.stdout }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run code checks
+        id: lint
+        continue-on-error: true
+        run: |
+          echo "Running code quality checks..."
+          bun run check:code 2>&1 | tee lint-output.txt
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          cat lint-output.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run type checks
+        id: types
+        continue-on-error: true
+        run: |
+          echo "Running type checks..."
+          bun run check:types 2>&1 | tee types-output.txt
+          echo "stdout<<EOF" >> $GITHUB_OUTPUT
+          cat types-output.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload check outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-outputs
+          path: |
+            lint-output.txt
+            types-output.txt
+          retention-days: 5
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: checks
+    if: needs.checks.outputs.lint-status == 'success' && needs.checks.outputs.types-status == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate auth files
+        run: bun run build:auth
+
+      - name: Build application
+        run: bun run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 30
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: [checks, build]
+    if: needs.checks.outputs.lint-status == 'success' && needs.checks.outputs.types-status == 'success'
+    environment:
+      name: preview-pr-${{ github.event.pull_request.number }}
+      url: ${{ steps.deploy.outputs.preview-url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Deploy to preview
+        id: deploy
+        run: |
+          # Placeholder for actual deployment
+          # This would typically deploy to Vercel, Netlify, or similar
+          echo "preview-url=https://preview-pr-${{ github.event.pull_request.number }}.example.com" >> $GITHUB_OUTPUT
+          echo "✅ Preview deployed successfully"
+
+  comment-status:
+    name: Update PR Status
+    runs-on: ubuntu-latest
+    needs: [checks, build, deploy-preview]
+    if: always()
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Create PR comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const lintStatus = '${{ needs.checks.outputs.lint-status }}';
+            const typesStatus = '${{ needs.checks.outputs.types-status }}';
+            const buildStatus = '${{ needs.build.result }}';
+            const deployStatus = '${{ needs.deploy-preview.result }}';
+            
+            let status = '✅ All checks passed';
+            let details = [];
+            
+            if (lintStatus !== 'success') {
+              status = '❌ Some checks failed';
+              details.push(`**Code Quality Check**: ❌ Failed`);
+              const lintOutput = `${{ needs.checks.outputs.lint-output }}`;
+              if (lintOutput) {
+                details.push(`<details><summary>Code Quality Errors</summary>\n\n\`\`\`\n${lintOutput}\n\`\`\`\n</details>`);
+              }
+            } else {
+              details.push(`**Code Quality Check**: ✅ Passed`);
+            }
+            
+            if (typesStatus !== 'success') {
+              status = '❌ Some checks failed';
+              details.push(`**Type Check**: ❌ Failed`);
+              const typesOutput = `${{ needs.checks.outputs.types-output }}`;
+              if (typesOutput) {
+                details.push(`<details><summary>Type Check Errors</summary>\n\n\`\`\`\n${typesOutput}\n\`\`\`\n</details>`);
+              }
+            } else {
+              details.push(`**Type Check**: ✅ Passed`);
+            }
+            
+            if (buildStatus === 'success') {
+              details.push(`**Build**: ✅ Passed`);
+            } else if (buildStatus === 'skipped') {
+              details.push(`**Build**: ⏭️ Skipped (checks failed)`);
+            } else {
+              details.push(`**Build**: ❌ Failed`);
+            }
+            
+            let previewUrl = '';
+            if (deployStatus === 'success') {
+              details.push(`**Preview Deployment**: ✅ Deployed`);
+              previewUrl = `\n\n🚀 **Preview URL**: https://preview-pr-${{ github.event.pull_request.number }}.example.com`;
+            } else if (deployStatus === 'skipped') {
+              details.push(`**Preview Deployment**: ⏭️ Skipped (checks failed)`);
+            } else {
+              details.push(`**Preview Deployment**: ❌ Failed`);
+            }
+            
+            const body = `## ${status}
+            
+            ${details.join('\n')}${previewUrl}
+            
+            ---
+            *This comment is automatically updated by the preview deployment workflow.*`;
+            
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const existingComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && comment.body.includes('This comment is automatically updated')
+            );
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

@@ -1,0 +1,55 @@
+{
+	"dependencies": {
+		"@electric-sql/pglite": "^0.3.4",
+		"@niledatabase/server": "^4.2.0",
+		"@t3-oss/env-core": "^0.13.8",
+		"arktype": "^2.1.20",
+		"better-auth": "^1.2.10",
+		"clsx": "^2.1.1",
+		"drizzle-orm": "^0.44.2",
+		"pg": "^8.16.2",
+		"react": "^19.1.0",
+		"react-dom": "^19.1.0",
+		"react-icons": "^5.5.0",
+		"react-router": "^7.6.2",
+		"tailwind-merge": "^3.3.1"
+	},
+	"devDependencies": {
+		"@better-auth/cli": "^1.2.10",
+		"@biomejs/biome": "^2.0.0-beta.6",
+		"@types/bun": "^1.2.17",
+		"@types/pg": "^8.15.4",
+		"@types/react": "^19.1.8",
+		"@types/react-dom": "^19.1.6",
+		"bun-plugin-tailwind": "^0.0.15",
+		"drizzle-kit": "^0.31.2",
+		"husky": "^9.1.7",
+		"lint-staged": "^15.3.0",
+		"tailwindcss": "^4.1.11"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx,json,css,md}": [
+			"biome check --write"
+		]
+	},
+	"main": "src/index.tsx",
+	"module": "src/index.tsx",
+	"name": "@devika/web-app",
+	"patchedDependencies": {
+		"@electric-sql/pglite@0.3.4": "patches/@electric-sql%2Fpglite@0.3.4.patch"
+	},
+	"private": true,
+	"scripts": {
+		"build": "bun --env-file=.env.local ./#blunt/build.ts",
+		"build:auth": "bun --env-file=.env.local @better-auth/cli@latest generate --config ./src/lib/auth/config.ts --output ./src/lib/db/schema/auth.generated.ts",
+		"check:code": "biome check --write",
+		"check:types": "tsc --noEmit",
+		"db": "bun --env-file=.env.local drizzle-kit",
+		"dev:db": "docker run -p 3010:5432 -d ghcr.io/niledatabase/testingcontainer:latest",
+		"dev:server": "bunx kill-port 3000 && sleep 1 && bun --env-file=.env.local --hot ./#blunt/server.tsx",
+		"prepare": "husky install",
+		"start": "NODE_ENV=production bun ./#blunt/server.tsx"
+	},
+	"type": "module",
+	"version": "0.1.0"
+}
