@@ -1,0 +1,26 @@
+{
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"buildCommand": "bun run build",
+	"cleanUrls": true,
+	"devCommand": "bun dev:server",
+	"framework": null,
+	"headers": [
+		{
+			"headers": [
+				{
+					"key": "Cross-Origin-Embedder-Policy",
+					"value": "require-corp"
+				},
+				{
+					"key": "Cross-Origin-Opener-Policy",
+					"value": "same-origin"
+				}
+			],
+			"source": "/(.*)"
+		}
+	],
+	"installCommand": "bun install --frozen-lockfile",
+	"outputDirectory": "dist",
+	"regions": ["bom1"],
+	"trailingSlash": false
+}

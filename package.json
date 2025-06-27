@@ -44,6 +44,7 @@
 		"build:auth": "bun --env-file=.env.local @better-auth/cli@latest generate --config ./src/lib/auth/config.ts --output ./src/lib/db/schema/auth.generated.ts",
 		"check:code": "biome check --write",
 		"check:types": "tsc --noEmit",
+		"commit": "bun scripts/commit.ts",
 		"db": "bun --env-file=.env.local drizzle-kit",
 		"dev:db": "docker run -p 3010:5432 -d ghcr.io/niledatabase/testingcontainer:latest",
 		"dev:server": "bunx kill-port 3000 && sleep 1 && bun --env-file=.env.local --hot ./#blunt/server.tsx",

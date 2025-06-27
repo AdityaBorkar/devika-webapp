@@ -9,6 +9,10 @@ concurrency:
   group: preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
 jobs:
   checks:
     name: Code Quality Checks
@@ -110,11 +114,15 @@ jobs:
 
       - name: Deploy to preview
         id: deploy
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
-          # Placeholder for actual deployment
-          # This would typically deploy to Vercel, Netlify, or similar
-          echo "preview-url=https://preview-pr-${{ github.event.pull_request.number }}.example.com" >> $GITHUB_OUTPUT
-          echo "✅ Preview deployed successfully"
+          npm install --global vercel@latest
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
   comment-status:
     name: Update PR Status
@@ -132,10 +140,10 @@ jobs:
             const typesStatus = '${{ needs.checks.outputs.types-status }}';
             const buildStatus = '${{ needs.build.result }}';
             const deployStatus = '${{ needs.deploy-preview.result }}';
-            
+
             let status = '✅ All checks passed';
             let details = [];
-            
+
             if (lintStatus !== 'success') {
               status = '❌ Some checks failed';
               details.push(`**Code Quality Check**: ❌ Failed`);
@@ -146,7 +154,7 @@ jobs:
             } else {
               details.push(`**Code Quality Check**: ✅ Passed`);
             }
-            
+
             if (typesStatus !== 'success') {
               status = '❌ Some checks failed';
               details.push(`**Type Check**: ❌ Failed`);
@@ -157,7 +165,7 @@ jobs:
             } else {
               details.push(`**Type Check**: ✅ Passed`);
             }
-            
+
             if (buildStatus === 'success') {
               details.push(`**Build**: ✅ Passed`);
             } else if (buildStatus === 'skipped') {
@@ -165,35 +173,35 @@ jobs:
             } else {
               details.push(`**Build**: ❌ Failed`);
             }
-            
+
             let previewUrl = '';
             if (deployStatus === 'success') {
               details.push(`**Preview Deployment**: ✅ Deployed`);
-              previewUrl = `\n\n🚀 **Preview URL**: https://preview-pr-${{ github.event.pull_request.number }}.example.com`;
+              previewUrl = `\n\n🚀 **Preview URL**: ${{ needs.deploy-preview.outputs.preview-url }}`;
             } else if (deployStatus === 'skipped') {
               details.push(`**Preview Deployment**: ⏭️ Skipped (checks failed)`);
             } else {
               details.push(`**Preview Deployment**: ❌ Failed`);
             }
-            
+
             const body = `## ${status}
-            
+
             ${details.join('\n')}${previewUrl}
-            
+
             ---
             *This comment is automatically updated by the preview deployment workflow.*`;
-            
+
             // Find existing comment
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const existingComment = comments.data.find(comment => 
+
+            const existingComment = comments.data.find(comment =>
               comment.user.type === 'Bot' && comment.body.includes('This comment is automatically updated')
             );
-            
+
             if (existingComment) {
               await github.rest.issues.updateComment({
                 owner: context.repo.owner,
