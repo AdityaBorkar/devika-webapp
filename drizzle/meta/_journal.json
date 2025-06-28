@@ -1,20 +1,27 @@
 {
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"breakpoints": true,
-			"idx": 0,
-			"tag": "0000_big_morgan_stark",
-			"version": "7",
-			"when": 1750943625246
-		},
-		{
-			"breakpoints": true,
-			"idx": 1,
-			"tag": "0001_known_demogoblin",
-			"version": "7",
-			"when": 1750943636561
-		}
-	],
-	"version": "7"
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1751040590426,
+      "tag": "0000_pale_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1751040608183,
+      "tag": "0001_tidy_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1751040819016,
+      "tag": "0002_lowly_sandman",
+      "breakpoints": true
+    }
+  ]
 }

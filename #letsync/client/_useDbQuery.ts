@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useDatabase } from '#letsync/client/_useDatabase';
+import { useDbConnection } from '#letsync/client/useDatabase';
 import { db as clientDb } from '@/lib/db/client';
 
 type QueryFunction<T> = (db: typeof clientDb) => Promise<T>;
 
 export function useDbQuery<T>(queryFn: QueryFunction<T>, deps: unknown[] = []) {
-	const { isReady, isPending: dbPending } = useDatabase();
+	const { isReady, isPending: dbPending } = useDbConnection();
 	const [data, setData] = useState<T | null>(null);
 	const [error, setError] = useState<Error | null>(null);
 	const [isPending, setIsPending] = useState(true);

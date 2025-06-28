@@ -2,4 +2,4 @@
 /** biome-ignore-all lint/performance/noReExportAll: WE NEED ALL FILES AT ONE */
 
 export * from './auth.generated';
-export * from './example';
+export * from './client.generated';

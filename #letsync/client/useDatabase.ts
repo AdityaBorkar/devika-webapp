@@ -1,5 +1,37 @@
+import type { PgliteDatabase } from 'drizzle-orm/pglite';
+import { useEffect, useState } from 'react';
+
 import { client } from '@/lib/db/client';
 import type { clientSchemaVersions } from '@/lib/db/schema';
+import { tryCatch } from '@/lib/tryCatch';
+
+// biome-ignore lint/suspicious/noExplicitAny: WE NEED TO SUPPORT ANY DATABASE TYPE
+export function useDatabase<DbType extends PgliteDatabase<any>>({
+	// db,
+	name,
+}: {
+	db: DbType;
+	name: string;
+}) {
+	const [status, setStatus] = useState<{
+		isPending: boolean;
+		error: Error | null;
+	}>({
+		error: null,
+		isPending: true,
+	});
+
+	useEffect(() => {
+		const _PerfStart = performance.now();
+		tryCatch(_setupDb({ name })).then(({ error }) => {
+			setStatus({ error, isPending: false });
+			const _PerfEnd = performance.now();
+			console.log(`Database initialized in ${_PerfEnd - _PerfStart}ms`);
+		});
+	}, [name]);
+
+	return status;
+}
 
 export async function _setupDb({ name }: { name: string }) {
 	const _LogsPrefix = `[DB:${name}]`;

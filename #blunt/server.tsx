@@ -1,9 +1,24 @@
-import { serve } from 'bun';
+import { build, serve } from 'bun';
 
+import { GET as apiSyncData } from '@/api/sync/data/route';
+import { GET as apiSyncSchemaMigration } from '@/api/sync/schema/migration/route';
+import { GET as apiSyncSchema } from '@/api/sync/schema/route';
 import { handler } from '@/lib/auth/server';
-import { env } from '@/lib/env';
+import { env } from '../src/env';
 import index from './index.html';
 
+// CLI Arguments:
+const ENABLE_HTTPS = true;
+
+// HTTPS configuration
+const cert = Bun.file('./certs/cert.pem');
+const key = Bun.file('./certs/key.pem');
+if (ENABLE_HTTPS && !((await key.exists()) && (await cert.exists()))) {
+	console.error('Certificate or key file does not exist');
+	process.exit(1);
+}
+
+// Server configuration
 const server = serve({
 	development: env.NODE_ENV !== 'production' && {
 		console: true,
@@ -12,10 +27,32 @@ const server = serve({
 	routes: {
 		'/*': index,
 		'/api/auth/*': handler,
+		'/api/sync/data': apiSyncData,
+		'/api/sync/schema': apiSyncSchema,
+		'/api/sync/schema/migration': apiSyncSchemaMigration,
 		'/pglite.data': handlePgliteFiles,
 		'/pglite.wasm': handlePgliteFiles,
+		'/workers/*': handleWebWorkers,
 	},
+	tls: { cert, key },
 });
+
+// ! WORKAROUND for Web Workers
+async function handleWebWorkers(req: Request) {
+	const url = new URL(req.url);
+	const result = await build({
+		entrypoints: [`./src/app/${url.pathname}`],
+		format: 'esm',
+		target: 'browser',
+	});
+	const output = await result.outputs[0].text();
+	const headers = {
+		'Content-Type': 'application/javascript',
+		'Cross-Origin-Embedder-Policy': 'require-corp',
+		'Cross-Origin-Opener-Policy': 'same-origin',
+	};
+	return new Response(output, { headers });
+}
 
 // ! WORKAROUND for BUG: https://github.com/oven-sh/bun/issues/20071 & https://github.com/oven-sh/bun/issues/15032
 function handlePgliteFiles(req: Request) {

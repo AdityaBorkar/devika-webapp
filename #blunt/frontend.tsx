@@ -1,6 +1,6 @@
 import { createRoot } from 'react-dom/client';
 
-import { Router } from '@/app/router';
+import { Router } from '#blunt/router';
 
 function start() {
 	const element = document.getElementById('root');

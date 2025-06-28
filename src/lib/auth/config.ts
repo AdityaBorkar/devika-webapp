@@ -4,7 +4,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 // biome-ignore lint/performance/noNamespaceImport: WE NEED TO IMPORT ALL FILES
 import * as schema from '@/lib/db/schema';
 import { db } from '@/lib/db/server';
-import { env } from '@/lib/env';
+import { env } from '../../env';
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: 'pg', schema }),

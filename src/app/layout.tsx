@@ -1,30 +1,38 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 import './index.css';
 
-import { useDatabase } from '#letsync/client';
+import { SyncProvider, useDatabase, useSync } from '#letsync/client';
+import { LocalClientProvider, useLocalClient } from '#letsync/local-client';
 import { useSession } from '@/lib/auth/client';
+import { db } from '@/lib/db/client';
 
 export default function RootLayout() {
 	const location = useLocation();
+	const database = useDatabase({ db, name: 'client-postgres' });
+	const client = useLocalClient();
 	const session = useSession();
-	const db = useDatabase();
+	const sync = useSync({ db, method: 'websocket' });
 
-	console.log({ session });
-
-	if (session.isPending || db.isPending) {
+	if (session.isPending || database.isPending) {
 		return <div>Loading...</div>;
 	}
-	if (location.pathname !== '/' && !session.data?.user) {
-		return <Navigate to="/" />;
+	if (location.pathname !== '/' && !session.data?.user?.id) {
+		return <Navigate replace to="/" />;
 	}
-	if (session.error || db.error) {
+	if (session.error || database.error) {
 		return (
 			<div>
 				Auth Error: {session.error?.message}
 				<br />
-				Database Error: {db.error?.message}
+				Database Error: {database.error?.message}
 			</div>
 		);
 	}
-	return <Outlet />;
+	return (
+		<SyncProvider sync={sync}>
+			<LocalClientProvider client={client}>
+				<Outlet />
+			</LocalClientProvider>
+		</SyncProvider>
+	);
 }

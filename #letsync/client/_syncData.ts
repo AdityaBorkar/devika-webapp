@@ -1,5 +1,9 @@
 // Sync user data from server
-export async function _syncData(): Promise<void> {
+export async function _syncData({
+	signal,
+}: {
+	signal: AbortSignal;
+}): Promise<void> {
 	const _PerfStart = performance.now();
 	// TODO: Poll for changes every 10 seconds
 	// try {

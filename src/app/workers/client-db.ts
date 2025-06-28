@@ -7,10 +7,9 @@ worker({
 			fs: new IdbFs('devika'),
 			relaxedDurability: true,
 		});
-		// await pg.waitReady; // We are not waiting here because we want the main thread to do work faster.
-
+		// ? We are not waiting here because we want the main thread to do work faster.
+		// await pg.waitReady;
 		// TODO: Perform Sync
-
 		return pg;
 	},
 });

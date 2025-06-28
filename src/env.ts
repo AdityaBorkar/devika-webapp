@@ -2,12 +2,14 @@ import { createEnv } from '@t3-oss/env-core';
 import { type } from 'arktype';
 
 export const env = createEnv({
+	client: {
+		BUN_PUBLIC_BASE_URL: type('string.url'),
+	},
+	clientPrefix: 'BUN_PUBLIC_',
 	emptyStringAsUndefined: true,
 	runtimeEnv: {
-		DATABASE_URL: process.env.DATABASE_URL,
-		GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
-		GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
-		NODE_ENV: process.env.NODE_ENV || 'development',
+		NODE_ENV: import.meta.env.NODE_ENV || 'development',
+		...(import.meta.env || {}),
 	},
 	server: {
 		DATABASE_URL: type('string.url'),

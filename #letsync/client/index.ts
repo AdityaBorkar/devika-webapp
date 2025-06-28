@@ -1,3 +1,5 @@
 /** biome-ignore-all lint/performance/noBarrelFile: PACKAGE EXPORT */
 
-export { useDatabase } from './_useDatabase';
+export { SyncProvider } from './SyncProvider';
+export { useDatabase } from './useDatabase';
+export { useSync } from './useSync';

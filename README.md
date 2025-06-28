@@ -1,18 +1,12 @@
-Search String:
-new URL\(".*?",\s*import\.meta\.url\)
-
-# Test comment for commit script
-
-Find:
-node_modules/@electric-sql/pglite/**
-
-Replace only in chunk with BASE_URL variable with the value "http://localhost:3000/"
-
+## Patch for `@electric-sql/pglite`
 ---
+- Search String: `new URL\(".*?",\s*import\.meta\.url\)`
+- Find in: `node_modules/@electric-sql/pglite/**.chunk.js`
+- Replace `import.meta.url` with `BASE_URL`
+- Replace `BASE_URL` variable with the value `self.location.origin`
 
-Hooop-actions
-- separate dashboard
-- support code-rabbit / cursor bugbot / claude agents / gemini agents
-- experiment using gemini agents with gemini-usage
-- slack integration
-- github actions
+
+## Fix for `drizzle-orm`
+---
+- Path: `onDelete: 'cascade'` in `auth.generated.ts`
+- Replace with `onDelete: 'cascade'`

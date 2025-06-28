@@ -1,5 +1,6 @@
 {
 	"dependencies": {
+		"@base-ui-components/react": "^1.0.0-beta.0",
 		"@electric-sql/pglite": "^0.3.4",
 		"@niledatabase/server": "^4.2.0",
 		"@t3-oss/env-core": "^0.13.8",
@@ -22,33 +23,31 @@
 		"@types/react": "^19.1.8",
 		"@types/react-dom": "^19.1.6",
 		"bun-plugin-tailwind": "^0.0.15",
-		"drizzle-kit": "^0.31.2",
-		"husky": "^9.1.7",
-		"lint-staged": "^15.3.0",
-		"tailwindcss": "^4.1.11"
+		"drizzle-kit": "^0.31.4",
+		"tailwindcss": "^4.1.11",
+		"tsx": "^4.20.3"
 	},
-	"lint-staged": {
-		"*.{js,jsx,ts,tsx,json,css,md}": [
-			"biome check --write"
-		]
-	},
-	"main": "src/index.tsx",
-	"module": "src/index.tsx",
 	"name": "@devika/web-app",
 	"patchedDependencies": {
 		"@electric-sql/pglite@0.3.4": "patches/@electric-sql%2Fpglite@0.3.4.patch"
 	},
 	"private": true,
 	"scripts": {
-		"build": "bun --env-file=.env.local ./#blunt/build.ts",
-		"build:auth": "bun --env-file=.env.local @better-auth/cli@latest generate --config ./src/lib/auth/config.ts --output ./src/lib/db/schema/auth.generated.ts",
+		"build": "bun build:auth-schema && bun build:letsync-schema && bun build:server",
+		"build:auth-schema": "bunx @better-auth/cli@latest generate --config ./src/lib/auth/config.ts --output ./src/lib/db/schema/auth.generated.ts",
+		"build:letsync-schema": "bunx @better-auth/cli@latest generate --config ./#letsync/client/config.ts --output ./#letsync/client/schema.generated.ts",
+		"build:server": "bun ./#blunt/build.ts",
+		"cert:generate": "mkdir -p certs && openssl req -x509 -newkey rsa:4096 -keyout certs/key.pem -out certs/cert.pem -sha256 -days 365 -nodes -subj '/CN=localhost'",
+		"check": "bun check:code && bun check:types",
 		"check:code": "biome check --write",
 		"check:types": "tsc --noEmit",
+		"clean": "rm -rf dist certs #letsync/client/schema.generated.ts src/lib/db/schema/auth.generated.ts",
 		"commit": "bun scripts/commit.ts",
 		"db": "bun --env-file=.env.local drizzle-kit",
-		"dev:db": "docker run -p 3010:5432 -d ghcr.io/niledatabase/testingcontainer:latest",
-		"dev:server": "bunx kill-port 3000 && sleep 1 && bun --env-file=.env.local --hot ./#blunt/server.tsx",
-		"prepare": "husky install",
+		"dev": "bunx kill-port 3000 && sleep 1 && bun --hot ./#blunt/server.tsx",
+		"local-db:reset": "bun db:stop && docker rm $(docker ps -aq --filter ancestor=ghcr.io/niledatabase/testingcontainer:latest) 2>/dev/null || true",
+		"local-db:start": "docker run -p 3010:5432 -d ghcr.io/niledatabase/testingcontainer:latest",
+		"local-db:stop": "docker kill $(docker ps -q --filter ancestor=ghcr.io/niledatabase/testingcontainer:latest) 2>/dev/null || true",
 		"start": "NODE_ENV=production bun ./#blunt/server.tsx"
 	},
 	"type": "module",
