@@ -1,21 +1,24 @@
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-// 1. Websocket Connection for sync
-// 2. HTTP Polling / SSE for sync
+import type { DatabaseListType } from '#letsync/types';
+import { Logger } from '#letsync/utils/Logger';
+
+// Constants:
+const DOMAIN = 'localhost:3000';
+const URL = '/api/sync';
+// ---
 
 type SyncState = {
 	isPending: boolean;
 	isSyncing: boolean;
-	error: Error | null;
+	error: string | null;
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: WE NEED TO SUPPORT ANY DATABASE TYPE
-export function useSync<DbType extends PgliteDatabase<any>>({
-	db,
-	method,
+export function useSync({
+	databases,
+	method = 'websocket',
 }: {
-	db: DbType;
+	databases: DatabaseListType;
 	method: 'websocket' | 'http-short-polling' | 'sse';
 }) {
 	const [sync, setSync] = useState<SyncState>({
@@ -24,22 +27,87 @@ export function useSync<DbType extends PgliteDatabase<any>>({
 		isSyncing: false,
 	});
 
-	// // biome-ignore lint/correctness/useExhaustiveDependencies: EFFECT DEPENDENCIES ARE NOT RELEVANT HERE
-	// useEffect(() => {
-	// 	if (db.error) {
-	// 		setSync({ error: null, isPending: false, isSyncing: false });
-	// 		return;
-	// 	}
+	useEffect(() => {
+		const controller = new AbortController();
+		const _PerfStart = performance.now();
 
-	// 	setSync({ error: null, isPending: true, isSyncing: false });
+		if (method === 'websocket') {
+			syncData_WS({ databases, signal: controller.signal })
+				.then(() => {
+					setSync({ error: null, isPending: false, isSyncing: true });
+					const _PerfEnd = performance.now();
+					logger.log(`Sync data took ${_PerfEnd - _PerfStart}ms`);
+				})
+				.catch((error) => {
+					setSync({ error: error.message, isPending: false, isSyncing: false });
+				});
+		}
 
-	// 	const { signal, abort } = new AbortController();
-	// 	tryCatch(_syncData({ signal })).then(({ error }) => {
-	// 		const isSyncing = !error; // TODO: check if sync is complete
-	// 		setSync({ error, isPending: false, isSyncing });
-	// 	});
-	// 	return () => abort();
-	// }, [db.isPending, db.error]);
+		if (method === 'http-short-polling') {
+			throw new Error('Not implemented');
+		}
+
+		if (method === 'sse') {
+			throw new Error('Not implemented');
+		}
+
+		return () => controller.abort();
+	}, [databases, method]);
 
 	return sync;
+}
+
+// Sync user data from server
+type WsMessage = {
+	type: 'initial_sync' | 'mutation';
+	[key: string]: unknown;
+};
+
+const logger = new Logger('SYNC');
+async function syncData_WS({
+	signal,
+	databases,
+}: {
+	signal: AbortSignal;
+	databases: DatabaseListType;
+}): Promise<void> {
+	const ws = new window.WebSocket(`wss://${DOMAIN}${URL}/ws`);
+	const sendData = (data: WsMessage) => ws.send(JSON.stringify(data));
+
+	ws.onopen = () => {
+		logger.log('Connection Established');
+		const cursors = databases.map(({ name }) => {
+			// ! TODO: Fetch Cursor
+			const cursor = undefined;
+			return { cursor, name };
+		});
+		sendData({ cursors, type: 'initial_sync' });
+	};
+	ws.onmessage = (event) => {
+		const data = JSON.parse(event.data);
+		console.log({ data });
+		// ! TODO: Handle `type`
+		// sync_request
+		// sync_data
+		// mutation
+		// mutation_ack
+		if (data.type === 'initial_sync') {
+			console.log(data);
+		}
+		if (data.type === 'mutation') {
+			console.log(data);
+		}
+	};
+	ws.onerror = (error) => {
+		logger.error('Connection Error', error);
+		// TODO: Handle UNAUTHORIZED
+		// TODO: Report Status
+	};
+	ws.onclose = () => {
+		logger.log('Connection Closed');
+		// TODO: Report Status
+	};
+	signal.addEventListener('abort', () => {
+		ws.close();
+	});
 }

@@ -1,27 +1,34 @@
 {
-  "version": "7",
-  "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1751040590426,
-      "tag": "0000_pale_newton_destine",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1751040608183,
-      "tag": "0001_tidy_vector",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1751040819016,
-      "tag": "0002_lowly_sandman",
-      "breakpoints": true
-    }
-  ]
+	"dialect": "postgresql",
+	"entries": [
+		{
+			"breakpoints": true,
+			"idx": 0,
+			"tag": "0000_low_killmonger",
+			"version": "7",
+			"when": 1751180469405
+		},
+		{
+			"breakpoints": true,
+			"idx": 1,
+			"tag": "0001_strange_yellowjacket",
+			"version": "7",
+			"when": 1751180501689
+		},
+		{
+			"breakpoints": true,
+			"idx": 2,
+			"tag": "0002_overjoyed_weapon_omega",
+			"version": "7",
+			"when": 1751186428454
+		},
+		{
+			"breakpoints": true,
+			"idx": 3,
+			"tag": "0003_brave_cargill",
+			"version": "7",
+			"when": 1751186922653
+		}
+	],
+	"version": "7"
 }

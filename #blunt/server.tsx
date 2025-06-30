@@ -1,9 +1,10 @@
 import { build, serve } from 'bun';
 
-import { GET as apiSyncData } from '@/api/sync/data/route';
-import { GET as apiSyncSchemaMigration } from '@/api/sync/schema/migration/route';
-import { GET as apiSyncSchema } from '@/api/sync/schema/route';
-import { handler } from '@/lib/auth/server';
+import {
+	handler as syncHandler,
+	handler_ws as syncHandler_ws,
+} from '#letsync/server';
+import { handler as authHandler } from '@/lib/auth/server';
 import { env } from '../src/env';
 import index from './index.html';
 
@@ -19,23 +20,33 @@ if (ENABLE_HTTPS && !((await key.exists()) && (await cert.exists()))) {
 }
 
 // Server configuration
-const server = serve({
+const serverConfig: any = {
 	development: env.NODE_ENV !== 'production' && {
 		console: true,
 		hmr: true,
 	},
 	routes: {
 		'/*': index,
-		'/api/auth/*': handler,
-		'/api/sync/data': apiSyncData,
-		'/api/sync/schema': apiSyncSchema,
-		'/api/sync/schema/migration': apiSyncSchemaMigration,
+		'/api/auth/*': authHandler,
+		'/api/sync/*': syncHandler,
+		// These are edge cases and a better solution is needed:
 		'/pglite.data': handlePgliteFiles,
 		'/pglite.wasm': handlePgliteFiles,
 		'/workers/*': handleWebWorkers,
 	},
-	tls: { cert, key },
-});
+	websocket: {
+		close: syncHandler_ws.close,
+		message: syncHandler_ws.message,
+		open: syncHandler_ws.open,
+	},
+};
+
+// Only add TLS if HTTPS is enabled and certificates exist
+if (ENABLE_HTTPS && (await key.exists()) && (await cert.exists())) {
+	serverConfig.tls = { cert, key };
+}
+
+const server = serve(serverConfig);
 
 // ! WORKAROUND for Web Workers
 async function handleWebWorkers(req: Request) {

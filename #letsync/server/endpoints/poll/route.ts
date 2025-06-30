@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth/config';
 
 // TODO: ATTACH A WEBSOCKET CONNECTION.
 
-export async function GET(request: BunRequest) {
+export async function getData_POLL(request: BunRequest) {
 	const headers = request.headers;
 	const session = await auth.api.getSession({ headers });
 	const userId = session?.user?.id;

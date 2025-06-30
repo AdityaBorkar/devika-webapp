@@ -1,16 +1,14 @@
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { useEffect, useState } from 'react';
 
-import { client } from '@/lib/db/client';
-import type { clientSchemaVersions } from '@/lib/db/schema';
-import { tryCatch } from '@/lib/tryCatch';
+import type { clientMetadata } from '#letsync/client/schemas/drizzle-postgres';
+import type { DatabaseType } from '#letsync/types';
+import { tryCatch } from '#letsync/utils/tryCatch';
 
-// biome-ignore lint/suspicious/noExplicitAny: WE NEED TO SUPPORT ANY DATABASE TYPE
-export function useDatabase<DbType extends PgliteDatabase<any>>({
-	// db,
+export function useDatabase<DbType extends DatabaseType>({
 	name,
+	client,
 }: {
-	db: DbType;
+	client: DbType;
 	name: string;
 }) {
 	const [status, setStatus] = useState<{
@@ -23,79 +21,71 @@ export function useDatabase<DbType extends PgliteDatabase<any>>({
 
 	useEffect(() => {
 		const _PerfStart = performance.now();
-		tryCatch(_setupDb({ name })).then(({ error }) => {
+		tryCatch(setupDb({ client, name })).then(({ error }) => {
 			setStatus({ error, isPending: false });
 			const _PerfEnd = performance.now();
 			console.log(`Database initialized in ${_PerfEnd - _PerfStart}ms`);
 		});
-	}, [name]);
+	}, [client, name]);
 
 	return status;
 }
 
-export async function _setupDb({ name }: { name: string }) {
+async function setupDb({
+	name,
+	client,
+	checkForUpdates = false,
+}: {
+	name: string;
+	client: DatabaseType;
+	checkForUpdates?: boolean;
+}) {
 	const _LogsPrefix = `[DB:${name}]`;
 
-	// Check current schema version
-	const current = (await client
-		.query(
-			`SELECT * FROM client_schema_versions ORDER BY "createdAt" DESC LIMIT 1;`,
-		)
-		.then((res) => res.rows[0])
-		.catch((_err) => {
-			return null;
-		})) as null | typeof clientSchemaVersions.$inferSelect;
+	// Get Current Schema
+	const current_schema = await client
+		.query(`SELECT * FROM local_metadata WHERE "key" = 'schema_version';`)
+		.then((res) => (res.rows[0] as typeof clientMetadata.$inferSelect)?.value)
+		.catch((_err) => undefined);
+	console.log(_LogsPrefix, 'Current Schema', current_schema);
 
-	// ! TEMPORARY
-	if (current?.version) {
-		return;
-	}
+	// If no updates are needed, return
+	if (current_schema && !checkForUpdates) return;
 
 	// Get Latest Schema
-	const url = current
-		? `/api/sync/schema/migration?name=${name}&from=${current.version}`
+	const url = current_schema
+		? `/api/sync/migration?name=${name}&from=${current_schema}`
 		: `/api/sync/schema?name=${name}`;
-	const latest = (await fetch(url)
-		.then((res) => res.json())
-		.catch((_err) => {
-			return null;
-		})) as typeof clientSchemaVersions.$inferSelect | null;
-	if (!latest) {
-		return;
+	const schema = await tryCatch(fetch(url).then((res) => res.json()));
+	if (schema.error) {
+		console.error(_LogsPrefix, 'Error fetching schema', schema.error);
+		throw schema.error;
 	}
 
 	// If no updates
-	if (current?.version === latest.version) {
+	if (current_schema === schema.data.version) {
+		console.log(_LogsPrefix, 'No updates found');
 		return;
 	}
 
-	const commands: (
-		| string
-		| { query: string; params: (string | number | boolean | null | Date)[] }
-	)[] = latest.sql.split('--> statement-breakpoint');
-	commands.push({
-		params: [
-			latest.checksum,
-			JSON.stringify(latest.snapshot),
-			latest.sql,
-			latest.tag,
-			latest.version,
-			latest.createdAt,
-			latest.isRolledBack,
-		],
-		query:
-			'INSERT INTO client_schema_versions (checksum, snapshot, sql, tag, version, "createdAt", "isRolledBack") VALUES ($1, $2, $3, $4, $5, $6, $7);',
-	});
+	// Update Schema
+	await executeSchema(schema.data.sql);
+	await client.query(
+		`INSERT INTO local_metadata ("key", "value") VALUES ('schema_version', $1) ON CONFLICT ("key") DO UPDATE SET "value" = EXCLUDED."value";`,
+		[schema.data.version],
+	);
+}
+
+async function executeSchema(sql: string) {
+	const commands: string[] = sql.split('--> statement-breakpoint');
 	const errors: string[] = [];
 	for await (const command of commands) {
-		const query = typeof command === 'string' ? command : command.query;
-		const params = typeof command === 'string' ? [] : command.params;
-		client
-			.query(query, params)
-			.then()
-			.catch((err) => errors.push(err.toString()));
+		client.query(command).catch((err) => {
+			errors.push(err.toString());
+		});
 	}
 	if (errors.length > 0) {
+		console.error('Schema Execution Failed', errors);
 		throw new Error('Schema Execution Failed');
 	}
 }

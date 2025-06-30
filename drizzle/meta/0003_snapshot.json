@@ -6,9 +6,9 @@
 	},
 	"dialect": "postgresql",
 	"enums": {},
-	"id": "21d3638a-b791-4796-9728-d5db335b2491",
+	"id": "85a32954-c9f3-40b4-a90a-c0ad3b55af55",
 	"policies": {},
-	"prevId": "00000000-0000-0000-0000-000000000000",
+	"prevId": "6eb0b1be-467b-4d8d-a1cc-7e1f802edb23",
 	"roles": {},
 	"schemas": {},
 	"sequences": {},
@@ -114,6 +114,189 @@
 			"schema": "",
 			"uniqueConstraints": {}
 		},
+		"public.change_log": {
+			"checkConstraints": {},
+			"columns": {
+				"change_data": {
+					"name": "change_data",
+					"notNull": false,
+					"primaryKey": false,
+					"type": "jsonb"
+				},
+				"id": {
+					"default": "public.uuid_generate_v7()",
+					"name": "id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				},
+				"operation": {
+					"name": "operation",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "text"
+				},
+				"record_id": {
+					"name": "record_id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				},
+				"table_name": {
+					"name": "table_name",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "text"
+				},
+				"tenant_id": {
+					"name": "tenant_id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				},
+				"timestamp": {
+					"default": "NOW()",
+					"name": "timestamp",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "timestamp"
+				},
+				"user_id": {
+					"name": "user_id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"foreignKeys": {},
+			"indexes": {
+				"change_log_pkey": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last",
+							"opclass": "uuid_ops"
+						},
+						{
+							"asc": true,
+							"expression": "id",
+							"isExpression": false,
+							"nulls": "last",
+							"opclass": "uuid_ops"
+						}
+					],
+					"concurrently": false,
+					"isUnique": true,
+					"method": "btree",
+					"name": "change_log_pkey",
+					"with": {}
+				},
+				"change_log_record_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "table_name",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "record_id",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "change_log_record_idx",
+					"with": {}
+				},
+				"change_log_table_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "table_name",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "timestamp",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "change_log_table_idx",
+					"with": {}
+				},
+				"change_log_tenant_timestamp_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "timestamp",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "change_log_tenant_timestamp_idx",
+					"with": {}
+				},
+				"change_log_user_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "user_id",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "change_log_user_idx",
+					"with": {}
+				}
+			},
+			"isRLSEnabled": false,
+			"name": "change_log",
+			"policies": {},
+			"schema": "",
+			"uniqueConstraints": {}
+		},
 		"public.client_schemas": {
 			"checkConstraints": {},
 			"columns": {
@@ -198,6 +381,164 @@
 			"indexes": {},
 			"isRLSEnabled": false,
 			"name": "local_metadata",
+			"policies": {},
+			"schema": "",
+			"uniqueConstraints": {}
+		},
+		"public.mutation_queue": {
+			"checkConstraints": {},
+			"columns": {
+				"created_at": {
+					"default": "NOW()",
+					"name": "created_at",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "timestamp"
+				},
+				"error": {
+					"name": "error",
+					"notNull": false,
+					"primaryKey": false,
+					"type": "text"
+				},
+				"id": {
+					"default": "public.uuid_generate_v7()",
+					"name": "id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				},
+				"mutation_data": {
+					"name": "mutation_data",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "jsonb"
+				},
+				"processed_at": {
+					"name": "processed_at",
+					"notNull": false,
+					"primaryKey": false,
+					"type": "timestamp"
+				},
+				"retry_count": {
+					"default": 0,
+					"name": "retry_count",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "integer"
+				},
+				"status": {
+					"default": "'pending'",
+					"name": "status",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "text"
+				},
+				"tenant_id": {
+					"name": "tenant_id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				},
+				"user_id": {
+					"name": "user_id",
+					"notNull": true,
+					"primaryKey": false,
+					"type": "uuid"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"foreignKeys": {},
+			"indexes": {
+				"mutation_queue_pending_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "status",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "created_at",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "mutation_queue_pending_idx",
+					"with": {}
+				},
+				"mutation_queue_pkey": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last",
+							"opclass": "uuid_ops"
+						},
+						{
+							"asc": true,
+							"expression": "id",
+							"isExpression": false,
+							"nulls": "last",
+							"opclass": "uuid_ops"
+						}
+					],
+					"concurrently": false,
+					"isUnique": true,
+					"method": "btree",
+					"name": "mutation_queue_pkey",
+					"with": {}
+				},
+				"mutation_queue_tenant_status_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "status",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "mutation_queue_tenant_status_idx",
+					"with": {}
+				},
+				"mutation_queue_user_idx": {
+					"columns": [
+						{
+							"asc": true,
+							"expression": "tenant_id",
+							"isExpression": false,
+							"nulls": "last"
+						},
+						{
+							"asc": true,
+							"expression": "user_id",
+							"isExpression": false,
+							"nulls": "last"
+						}
+					],
+					"concurrently": false,
+					"isUnique": false,
+					"method": "btree",
+					"name": "mutation_queue_user_idx",
+					"with": {}
+				}
+			},
+			"isRLSEnabled": false,
+			"name": "mutation_queue",
 			"policies": {},
 			"schema": "",
 			"uniqueConstraints": {}

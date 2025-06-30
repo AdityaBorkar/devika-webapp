@@ -3,7 +3,7 @@ import type { BunRequest } from 'bun';
 import { type } from 'arktype';
 import { desc, sql } from 'drizzle-orm';
 
-import { clientSchemaVersions } from '@/lib/db/schema/client.generated';
+import { clientSchemas } from '@/lib/db/schema/client.generated';
 import { db } from '@/lib/db/server';
 
 // TODO: Cache Requests for 7 days, if returns 200 (ISR)
@@ -15,7 +15,7 @@ const schema = type({
 	'version?': 'number',
 });
 
-export async function GET(request: BunRequest) {
+export async function getSchema(request: BunRequest) {
 	// Request Validation
 	const { searchParams } = new URL(request.url);
 	const name = searchParams.get('name');
@@ -26,18 +26,16 @@ export async function GET(request: BunRequest) {
 	}
 
 	// Return Schema
-	const record = await getSchema(version);
+	const record = await _getSchema(version);
 	return Response.json(record);
 }
 
-async function getSchema(version: string | null) {
+async function _getSchema(version: string | null) {
 	const [record] = await db
 		.select()
-		.from(clientSchemaVersions)
-		.where(
-			version ? sql`${clientSchemaVersions.version} = ${version}` : undefined,
-		)
-		.orderBy(desc(clientSchemaVersions.createdAt))
+		.from(clientSchemas)
+		.where(version ? sql`${clientSchemas.version} = ${version}` : undefined)
+		.orderBy(desc(clientSchemas.createdAt))
 		.limit(1);
 	if (!record) {
 		throw new Error(`Schema version ${version} not found`);

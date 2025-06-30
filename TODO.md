@@ -54,3 +54,5 @@
 2. Task Management can happen on GitHub Projects / Devika / Linear. SELECT TASK STORAGE.
 3. Select your IDE (for opening the code editor).
 4. Create a Workspace.
+
+clause # use shadcn/ui components and motion.dev library for animations.

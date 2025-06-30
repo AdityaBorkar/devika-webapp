@@ -1,17 +1,17 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 import './index.css';
 
-import { SyncProvider, useDatabase, useSync } from '#letsync/client';
-import { LocalClientProvider, useLocalClient } from '#letsync/local-client';
+import { SyncProvider, useDatabase } from '#letsync/client';
+import { LocalClientProvider } from '#letsync/local-client';
 import { useSession } from '@/lib/auth/client';
 import { db } from '@/lib/db/client';
 
+const postgres = { db, name: 'client-postgres' } as const;
+
 export default function RootLayout() {
 	const location = useLocation();
-	const database = useDatabase({ db, name: 'client-postgres' });
-	const client = useLocalClient();
 	const session = useSession();
-	const sync = useSync({ db, method: 'websocket' });
+	const database = useDatabase(postgres);
 
 	if (session.isPending || database.isPending) {
 		return <div>Loading...</div>;
@@ -28,11 +28,17 @@ export default function RootLayout() {
 			</div>
 		);
 	}
+
 	return (
-		<SyncProvider sync={sync}>
-			<LocalClientProvider client={client}>
+		<SyncProvider databases={[postgres]} method="websocket">
+			<LocalClient>
 				<Outlet />
-			</LocalClientProvider>
+			</LocalClient>
 		</SyncProvider>
 	);
+}
+
+function LocalClient({ children }: { children: React.ReactNode }) {
+	const config = { port: 5000 };
+	return <LocalClientProvider config={config}>{children}</LocalClientProvider>;
 }
