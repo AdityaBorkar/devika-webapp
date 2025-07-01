@@ -1,5 +1,6 @@
 -- Current sql file was generated after introspecting the database
--- Uncommented for migration execution
+-- If you want to run this migration please uncomment this code before executing migrations
+/*
 CREATE TABLE "tenants" (
 	"id" uuid DEFAULT public.uuid_generate_v7() NOT NULL,
 	"name" text,
@@ -10,3 +11,4 @@ CREATE TABLE "tenants" (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "tenants_pkey" ON "tenants" USING btree ("id" uuid_ops);
+*/

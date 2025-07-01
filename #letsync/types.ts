@@ -1,20 +1,12 @@
+import type { PGlite } from '@electric-sql/pglite';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
 
 // biome-ignore lint/suspicious/noExplicitAny: WE NEED TO SUPPORT ANY DATABASE TYPE
 export type DatabaseType = PgliteDatabase<any>;
-
-// WebSocket data types
-export interface WebSocketData {
-	userId: string;
-	tenantId?: string;
-	session: any;
-	connectionTime: number;
-}
-
-export interface WebSocketMessage {
-	type: string;
-	[key: string]: any;
-}
+export type DatabaseListType = {
+	client: PGlite;
+	name: string;
+}[];
 
 // Database operations
 export type OperationType = 'insert' | 'update' | 'delete';
@@ -100,6 +92,12 @@ export interface ErrorMessage extends BaseMessage {
 	message: string;
 	code?: string;
 }
+
+export type SyncMethods =
+	| 'websocket'
+	| 'webtransport'
+	| 'http-short-polling'
+	| 'sse';
 
 // Union type for all possible WebSocket messages
 export type WebSocketMessageTypes =
@@ -193,18 +191,6 @@ export enum MutationStatus {
 	FAILED = 'failed',
 	RETRYING = 'retrying',
 }
-
-// Enhanced WebSocket data with tenant context
-export interface EnhancedWebSocketData extends WebSocketData {
-	tenant_id?: string;
-	last_sync_timestamp?: number;
-	active_subscriptions?: string[];
-}
-
-export type DatabaseListType = {
-	db: DatabaseType;
-	name: string;
-}[];
 
 // =============================================================================
 // UNION TYPES FOR MESSAGE HANDLING

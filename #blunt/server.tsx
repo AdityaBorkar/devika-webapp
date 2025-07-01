@@ -20,7 +20,7 @@ if (ENABLE_HTTPS && !((await key.exists()) && (await cert.exists()))) {
 }
 
 // Server configuration
-const serverConfig: any = {
+const server = serve({
 	development: env.NODE_ENV !== 'production' && {
 		console: true,
 		hmr: true,
@@ -34,19 +34,14 @@ const serverConfig: any = {
 		'/pglite.wasm': handlePgliteFiles,
 		'/workers/*': handleWebWorkers,
 	},
+	// @ts-expect-error
+	tls: { cert, key },
 	websocket: {
 		close: syncHandler_ws.close,
 		message: syncHandler_ws.message,
 		open: syncHandler_ws.open,
 	},
-};
-
-// Only add TLS if HTTPS is enabled and certificates exist
-if (ENABLE_HTTPS && (await key.exists()) && (await cert.exists())) {
-	serverConfig.tls = { cert, key };
-}
-
-const server = serve(serverConfig);
+});
 
 // ! WORKAROUND for Web Workers
 async function handleWebWorkers(req: Request) {

@@ -4,7 +4,7 @@ import { file } from 'bun';
 
 import { eq } from 'drizzle-orm';
 
-import { clientSchemas } from '../src/lib/db/schema';
+import { clientSchemas } from '#letsync/client/schemas/drizzle-postgres';
 import { db } from '../src/lib/db/server';
 
 // ANSI color codes for better console output

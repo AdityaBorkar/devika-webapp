@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 
-import type { DatabaseListType } from '#letsync/types';
+import { syncData_WS } from '#letsync/client/ws/handler';
+import type { DatabaseListType, SyncMethods } from '#letsync/types';
 import { Logger } from '#letsync/utils/Logger';
 
-// Constants:
-const DOMAIN = 'localhost:3000';
-const URL = '/api/sync';
-// ---
+const logger = new Logger('SYNC');
 
 type SyncState = {
 	isPending: boolean;
@@ -17,9 +15,14 @@ type SyncState = {
 export function useSync({
 	databases,
 	method = 'websocket',
+	server,
 }: {
 	databases: DatabaseListType;
-	method: 'websocket' | 'http-short-polling' | 'sse';
+	server: {
+		endpoint: string;
+		https: boolean;
+	};
+	method: SyncMethods;
 }) {
 	const [sync, setSync] = useState<SyncState>({
 		error: null,
@@ -32,7 +35,7 @@ export function useSync({
 		const _PerfStart = performance.now();
 
 		if (method === 'websocket') {
-			syncData_WS({ databases, signal: controller.signal })
+			syncData_WS({ databases, server, signal: controller.signal })
 				.then(() => {
 					setSync({ error: null, isPending: false, isSyncing: true });
 					const _PerfEnd = performance.now();
@@ -52,62 +55,7 @@ export function useSync({
 		}
 
 		return () => controller.abort();
-	}, [databases, method]);
+	}, [databases, method, server]);
 
 	return sync;
-}
-
-// Sync user data from server
-type WsMessage = {
-	type: 'initial_sync' | 'mutation';
-	[key: string]: unknown;
-};
-
-const logger = new Logger('SYNC');
-async function syncData_WS({
-	signal,
-	databases,
-}: {
-	signal: AbortSignal;
-	databases: DatabaseListType;
-}): Promise<void> {
-	const ws = new window.WebSocket(`wss://${DOMAIN}${URL}/ws`);
-	const sendData = (data: WsMessage) => ws.send(JSON.stringify(data));
-
-	ws.onopen = () => {
-		logger.log('Connection Established');
-		const cursors = databases.map(({ name }) => {
-			// ! TODO: Fetch Cursor
-			const cursor = undefined;
-			return { cursor, name };
-		});
-		sendData({ cursors, type: 'initial_sync' });
-	};
-	ws.onmessage = (event) => {
-		const data = JSON.parse(event.data);
-		console.log({ data });
-		// ! TODO: Handle `type`
-		// sync_request
-		// sync_data
-		// mutation
-		// mutation_ack
-		if (data.type === 'initial_sync') {
-			console.log(data);
-		}
-		if (data.type === 'mutation') {
-			console.log(data);
-		}
-	};
-	ws.onerror = (error) => {
-		logger.error('Connection Error', error);
-		// TODO: Handle UNAUTHORIZED
-		// TODO: Report Status
-	};
-	ws.onclose = () => {
-		logger.log('Connection Closed');
-		// TODO: Report Status
-	};
-	signal.addEventListener('abort', () => {
-		ws.close();
-	});
 }

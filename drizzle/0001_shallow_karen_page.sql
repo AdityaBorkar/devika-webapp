@@ -1,3 +1,44 @@
+CREATE TABLE "cdc" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"table_name" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "cdc_cache" (
+	"client_applied_at" timestamp,
+	"bucket" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"cursor" text NOT NULL,
+	"ending_cursor" text NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"starting_cursor" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "client_metadata" (
+	"key" text PRIMARY KEY NOT NULL,
+	"value" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "client_mutations" (
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"table_name" text NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "client_schemas" (
+	"checksum" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
+	"is_rolled_back" boolean DEFAULT false NOT NULL,
+	"snapshot" text NOT NULL,
+	"sql" text NOT NULL,
+	"tag" text,
+	"version" text NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "account" (
 	"access_token" text,
 	"access_token_expires_at" timestamp,
@@ -46,42 +87,14 @@ CREATE TABLE "verification" (
 	"value" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "client_schemas" (
-	"checksum" text NOT NULL,
-	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"isRolledBack" boolean DEFAULT false NOT NULL,
-	"snapshot" text NOT NULL,
-	"sql" text NOT NULL,
-	"tag" text,
-	"version" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "local_metadata" (
-	"key" text PRIMARY KEY NOT NULL,
-	"value" text NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "posts" (
-	"author_id" serial NOT NULL,
-	"content" text NOT NULL,
+CREATE TABLE "tasks" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"published" boolean DEFAULT false NOT NULL,
-	"title" text NOT NULL,
+	"description" text,
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"status" text DEFAULT 'pending' NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "users" (
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"email" text NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"name" text NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
-);
---> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_users_id_fk" FOREIGN KEY ("author_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;

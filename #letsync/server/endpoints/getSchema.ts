@@ -3,12 +3,11 @@ import type { BunRequest } from 'bun';
 import { type } from 'arktype';
 import { desc, sql } from 'drizzle-orm';
 
-import { clientSchemas } from '@/lib/db/schema/client.generated';
-import { db } from '@/lib/db/server';
+import { clientSchemas } from '#letsync/client/schemas/drizzle-postgres';
+import { db } from '@/lib/db/server'; // TODO: Outsource db to a separate module
 
-// TODO: Cache Requests for 7 days, if returns 200 (ISR)
-// TODO: Cache Requests for 24hrs, if returns 404 (ISR)
-// TODO: Protect Request using Rate Limit to avoid DDoS
+// TODO: Cache Requests for 365 days, if returns 200 (ISR)
+// TODO: Cache Requests for 24 hrs, if returns 404 (ISR)
 
 const schema = type({
 	name: 'string',

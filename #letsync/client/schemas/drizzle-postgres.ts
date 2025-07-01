@@ -1,42 +1,59 @@
-import { boolean, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import {
+	boolean,
+	jsonb,
+	pgTable,
+	serial,
+	text,
+	timestamp,
+	uuid,
+} from 'drizzle-orm/pg-core';
 
 export const clientSchemas = pgTable('client_schemas', {
-	checksum: text('checksum').notNull(),
-	createdAt: timestamp('createdAt').defaultNow().notNull(),
-	id: serial('id').primaryKey(),
-	isRolledBack: boolean('isRolledBack').default(false).notNull(),
-	snapshot: text('snapshot').notNull(),
-	sql: text('sql').notNull(),
-	tag: text('tag'),
-	version: text('version').notNull(),
+	checksum: text().notNull(),
+	createdAt: timestamp().defaultNow().notNull(),
+	id: serial().primaryKey(),
+	isRolledBack: boolean().default(false).notNull(),
+	snapshot: text().notNull(),
+	sql: text().notNull(),
+	tag: text(),
+	version: text().notNull(),
 });
 
 export const clientMetadata = pgTable('client_metadata', {
-	key: text('key').primaryKey(),
-	value: text('value').notNull(),
+	key: text().primaryKey(),
+	value: text().notNull(),
 });
 
 export const clientMutations = pgTable('client_mutations', {
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	id: serial('id').primaryKey(),
-	tableName: text('table_name').notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+	createdAt: timestamp().defaultNow().notNull(),
+	mutationName: text().notNull(),
+	requestId: uuid().notNull(),
+	status: text({
+		enum: ['pending', 'processing', 'completed', 'failed'],
+	}).notNull(),
 });
 
 export const cdc = pgTable('cdc', {
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	id: serial('id').primaryKey(),
-	tableName: text('table_name').notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+	action: text().notNull(), // 'archived' | 'marked as completed' | 'execution started' | 'execution cancelled' | Custom Text
+	data: jsonb().notNull(), // Transformations only
+	id: serial().primaryKey(), // Cursor
+	itemId: text().notNull(), // tableName_rowId (non-indexed)
+	operation: text({ enum: ['create', 'update', 'delete'] }).notNull(),
+	tenantId: uuid().notNull(),
+	timestamp: timestamp().notNull(),
+	userId: uuid().notNull(),
 });
 
 export const cdcCache = pgTable('cdc_cache', {
-	bucket: text('bucket').notNull(),
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	cursor: text('cursor').notNull(),
-	endingCursor: text('ending_cursor').notNull(),
-	id: serial('id').primaryKey(),
-	startingCursor: text('starting_cursor').notNull(), // TODO: Add tenantId
-	tenantId: text('tenant_id').notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+	_clientAppliedAt: timestamp(),
+	end: text().notNull(),
+	id: serial().primaryKey(),
+	start: text().notNull(),
+	storageUrl: text().notNull(),
+	tenantId: uuid().notNull(),
 });
+
+// TODO: Mutations and executing them in the client-server spaces. Experiment in /test endpoint.
+// Go to #letsync/client/ws/messages/data-operations.ts and construct SQL Queries with transactions
+// Also sync CDC Records to the client.
+// Basic Conflice Resolution - Last Write Wins.

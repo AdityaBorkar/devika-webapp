@@ -16,4 +16,4 @@ worker.onerror = (_err) => {
 
 export const client = new PGliteWorker(worker) as unknown as PGlite;
 
-export const db = drizzle(client, { schema });
+export const db = drizzle(client, { casing: 'snake_case', schema });

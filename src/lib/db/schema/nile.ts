@@ -10,12 +10,12 @@ import {
 export const tenants = pgTable(
 	'tenants',
 	{
-		computeId: uuid('compute_id'),
+		computeId: uuid(),
 		created: timestamp({ mode: 'string' })
 			.default(sql`LOCALTIMESTAMP`)
 			.notNull(),
 		deleted: timestamp({ mode: 'string' }),
-		id: uuid().default(sql`public.uuid_generate_v7()`).notNull().primaryKey(),
+		id: uuid().default(sql`public.uuid_generate_v7()`).notNull(),
 		name: text(),
 		updated: timestamp({ mode: 'string' })
 			.default(sql`LOCALTIMESTAMP`)

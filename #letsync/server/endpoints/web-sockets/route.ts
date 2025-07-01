@@ -1,6 +1,6 @@
 import type { BunRequest, Server } from 'bun';
 
-import { auth } from '@/lib/auth/config';
+import { auth } from '@/lib/auth/config'; // TODO: Outsource auth to a separate module
 
 export async function getData_WS(request: BunRequest, server: Server) {
 	const headers = request.headers;

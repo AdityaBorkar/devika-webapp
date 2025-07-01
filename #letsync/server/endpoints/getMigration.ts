@@ -3,19 +3,18 @@ import type { BunRequest } from 'bun';
 import { ArkErrors, type } from 'arktype';
 import { and, desc, gte, isNotNull, lte } from 'drizzle-orm';
 
-import { clientSchemas } from '../../../src/lib/db/schema/client.generated';
-import { db } from '../../../src/lib/db/server';
+import { clientSchemas } from '#letsync/client/schemas/drizzle-postgres';
+import { db } from '@/lib/db/server'; // TODO: Outsource db to a separate module
 
-// TODO: Cache Requests for 7 days, if returns 200 (ISR)
-// TODO: Cache Requests for 24hrs, if returns 404 (ISR)
-// TODO: Protect Request using Rate Limit to avoid DDoS
+// TODO: Cache Requests for 365 days, if returns 200 (ISR)
+// TODO: Cache Requests for 24 hrs, if returns 404 (ISR)
 
 // ! WORK ON THIS ENTIRE API ENDPOINT
 
 const schema = type({
 	from: 'number',
 	name: 'string',
-	to: 'number | null',
+	'to?': 'number',
 });
 
 export async function getMigration(request: BunRequest) {

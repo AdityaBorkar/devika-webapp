@@ -4,9 +4,9 @@ import './index.css';
 import { SyncProvider, useDatabase } from '#letsync/client';
 import { LocalClientProvider } from '#letsync/local-client';
 import { useSession } from '@/lib/auth/client';
-import { db } from '@/lib/db/client';
+import { client } from '@/lib/db/client';
 
-const postgres = { db, name: 'client-postgres' } as const;
+const postgres = { client, name: 'client-postgres' } as const;
 
 export default function RootLayout() {
 	const location = useLocation();
@@ -30,7 +30,11 @@ export default function RootLayout() {
 	}
 
 	return (
-		<SyncProvider databases={[postgres]} method="websocket">
+		<SyncProvider
+			databases={[postgres]}
+			method="websocket"
+			server={{ endpoint: 'localhost:3000/api/sync', https: true }}
+		>
 			<LocalClient>
 				<Outlet />
 			</LocalClient>
@@ -39,6 +43,7 @@ export default function RootLayout() {
 }
 
 function LocalClient({ children }: { children: React.ReactNode }) {
+	// TODO - Work on this
 	const config = { port: 5000 };
 	return <LocalClientProvider config={config}>{children}</LocalClientProvider>;
 }

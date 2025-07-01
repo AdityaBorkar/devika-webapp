@@ -1,14 +1,16 @@
+import type { PGlite } from '@electric-sql/pglite';
+import { eq } from 'drizzle-orm';
 import { useEffect, useState } from 'react';
 
-import type { clientMetadata } from '#letsync/client/schemas/drizzle-postgres';
-import type { DatabaseType } from '#letsync/types';
+import { clientMetadata } from '#letsync/client/schemas/drizzle-postgres';
 import { tryCatch } from '#letsync/utils/tryCatch';
+import { db } from '@/lib/db/client';
 
-export function useDatabase<DbType extends DatabaseType>({
+export function useDatabase({
 	name,
 	client,
 }: {
-	client: DbType;
+	client: PGlite;
 	name: string;
 }) {
 	const [status, setStatus] = useState<{
@@ -37,16 +39,18 @@ async function setupDb({
 	checkForUpdates = false,
 }: {
 	name: string;
-	client: DatabaseType;
+	client: PGlite;
 	checkForUpdates?: boolean;
 }) {
 	const _LogsPrefix = `[DB:${name}]`;
 
 	// Get Current Schema
-	const current_schema = await client
-		.query(`SELECT * FROM local_metadata WHERE "key" = 'schema_version';`)
-		.then((res) => (res.rows[0] as typeof clientMetadata.$inferSelect)?.value)
-		.catch((_err) => undefined);
+	const current_schema = await db.query.clientMetadata
+		.findFirst({
+			where: ({ key }) => eq(key, `${name}:schema_version`),
+		})
+		.then((res) => res?.value || '')
+		.catch(() => '');
 	console.log(_LogsPrefix, 'Current Schema', current_schema);
 
 	// If no updates are needed, return
@@ -69,14 +73,14 @@ async function setupDb({
 	}
 
 	// Update Schema
-	await executeSchema(schema.data.sql);
-	await client.query(
-		`INSERT INTO local_metadata ("key", "value") VALUES ('schema_version', $1) ON CONFLICT ("key") DO UPDATE SET "value" = EXCLUDED."value";`,
-		[schema.data.version],
-	);
+	await executeSchema(client, schema.data.sql);
+	await db.insert(clientMetadata).values({
+		key: `${name}:schema_version`,
+		value: schema.data.version,
+	});
 }
 
-async function executeSchema(sql: string) {
+async function executeSchema(client: PGlite, sql: string) {
 	const commands: string[] = sql.split('--> statement-breakpoint');
 	const errors: string[] = [];
 	for await (const command of commands) {

@@ -4,4 +4,4 @@ import { env } from '../../env';
 // biome-ignore lint/performance/noNamespaceImport: WE NEED TO IMPORT ALL FILES
 import * as schema from './schema/index';
 
-export const db = drizzle(env.DATABASE_URL, { schema });
+export const db = drizzle(env.DATABASE_URL, { casing: 'snake_case', schema });

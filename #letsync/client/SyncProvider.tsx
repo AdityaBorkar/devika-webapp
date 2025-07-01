@@ -6,14 +6,19 @@ import type { DatabaseListType } from '#letsync/types';
 export function SyncProvider({
 	databases,
 	method = 'websocket',
+	server,
 	children,
 }: {
 	databases: DatabaseListType;
-	method: 'websocket' | 'http-short-polling' | 'sse';
+	method: 'websocket' | 'webtransport' | 'http-short-polling' | 'sse';
+	server: {
+		endpoint: string;
+		https: boolean;
+	};
 	children: React.ReactNode;
 }) {
-	const sync = useSync({ databases, method });
-	return <SyncContext.Provider value={sync}>{children}</SyncContext.Provider>;
+	const sync = useSync({ databases, method, server });
+	return <SyncContext value={sync}>{children}</SyncContext>;
 }
 
 export const SyncContext = createContext<ReturnType<typeof useSync>>({
