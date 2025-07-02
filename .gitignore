@@ -31,3 +31,5 @@ certs/
 .devika
 .gemini
 .vercel
+
+.ignore

@@ -1,12 +1,3 @@
-## BUN BUGS - The following bugs in bun are blocking us:
----
-1. Failure to import.meta.env in client.
-    - Possibily failing Pglite.
-    - Possibily failing @/lib/auth/client.ts
-    - https://github.com/oven-sh/bun/issues/20071
-2. Framework API is coming soon.
-
-
 ## hooop-actions
 ---
 - separate package for github actions
@@ -36,15 +27,6 @@
     - Add environment-specific configurations
     - Improve build-time vs runtime environment handling
 5. https://env.t3.gg/docs/core#validate-schema-on-build-(recommended)
-
-
-## bluntjs
----
-- Make a codemod for Next -> Blunt migration.
-- Make a MIGRATION-NEXT-TO-BLUNT.md for the migration notes for AI to make certain changes.
-- Make a codemod for Blunt -> Next migration.
-- Make a MIGRATION-BLUNT-TO-NEXT.md for the migration notes for AI to make certain changes.
-- Support for (https:)//localhost.devika.com and (https:)//devika.localhost:3000
 
 
 ## Baby Steps
