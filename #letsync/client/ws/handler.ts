@@ -34,13 +34,13 @@ export async function syncData_WS({
 	ws.onopen = async () => {
 		ws.send(JSON.stringify({ refId: generateRefId(), type: 'ping' }));
 		for (const { name } of databases) {
-			const cursor = await db.query.clientMetadata
+			const timestamp = await db.query.clientMetadata
 				.findFirst({
 					where: ({ key }) => eq(key, `${name}:cursor`),
 				})
 				.then((cursor) => cursor?.value || '');
 			const data = {
-				cursor,
+				cursor: timestamp ? new Date(timestamp) : undefined,
 				name,
 				refId: generateRefId(),
 				type: 'sync_request',

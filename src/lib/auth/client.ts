@@ -6,4 +6,4 @@ export const authClient = createAuthClient({
 	baseURL: env_workaround.BASE_URL,
 });
 
-export const { useSession, signIn, signOut, signUp } = authClient;
+export const { useSession, signIn, signOut, signUp, getSession } = authClient;

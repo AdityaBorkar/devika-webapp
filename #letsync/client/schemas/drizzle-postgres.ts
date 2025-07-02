@@ -1,3 +1,4 @@
+import { createId } from '@paralleldrive/cuid2';
 import {
 	boolean,
 	jsonb,
@@ -36,24 +37,32 @@ export const clientMutations = pgTable('client_mutations', {
 export const cdc = pgTable('cdc', {
 	action: text().notNull(), // 'archived' | 'marked as completed' | 'execution started' | 'execution cancelled' | Custom Text
 	data: jsonb().notNull(), // Transformations only
-	id: serial().primaryKey(), // Cursor
+	id: text().$defaultFn(() => createId()),
 	itemId: text().notNull(), // tableName_rowId (non-indexed)
 	operation: text({ enum: ['create', 'update', 'delete'] }).notNull(),
-	tenantId: uuid().notNull(),
-	timestamp: timestamp().notNull(),
+	tenantId: uuid(),
+	timestamp: timestamp().notNull(), // Cursor
 	userId: uuid().notNull(),
 });
 
 export const cdcCache = pgTable('cdc_cache', {
 	_clientAppliedAt: timestamp(),
 	end: text().notNull(),
-	id: serial().primaryKey(),
+	id: text().$defaultFn(() => createId()),
 	start: text().notNull(),
 	storageUrl: text().notNull(),
-	tenantId: uuid().notNull(),
+	tenantId: uuid(),
+	timestamp: timestamp().notNull(),
 });
 
 // TODO: Mutations and executing them in the client-server spaces. Experiment in /test endpoint.
 // Go to #letsync/client/ws/messages/data-operations.ts and construct SQL Queries with transactions
 // Also sync CDC Records to the client.
 // Basic Conflice Resolution - Last Write Wins.
+// insert into tenants (id, name) values ('d24419bf-6122-4879-afa5-1d9c1b051d72', 'my first customer');
+// select * from tenants;
+
+// insert into todos (tenant_id, title, estimate, embedding, complete) values ('d24419bf-6122-4879-afa5-1d9c1b051d72', 'feed my cat', '1h', '[1,2,3]', false);
+
+// SELECT tenants.name, title, embedding, estimate, complete
+// FROM todos join tenants on tenants.id = todos.tenant_id;

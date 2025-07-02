@@ -1,10 +1,23 @@
-import { pgTable, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, pgEnum, pgTable, text } from 'drizzle-orm/pg-core';
+
+import { CommonColumns, cuid2 } from './_utils';
+
+export const taskStatus = pgEnum('task_status', [
+	'pending',
+	'in_progress',
+	'completed',
+	'cancelled',
+	'failed',
+]);
 
 export const tasks = pgTable('tasks', {
-	createdAt: timestamp('created_at').defaultNow().notNull(),
-	description: text('description'),
-	id: text('id').primaryKey(),
-	name: text('name').notNull(),
-	status: text('status', { enum: ['pending', 'in_progress', 'completed'] }).default('pending').notNull(),
-	updatedAt: timestamp('updated_at').defaultNow().notNull(),
+	...CommonColumns,
+	description: text(),
+	id: cuid2(),
+	isRunning: boolean().default(false).notNull(),
+	name: text().notNull(),
+	status: taskStatus().default('pending').notNull(),
+	// blocking: text().array(),
+	// dependsOn: text().array(),
+	// subTasks: text().array(),
 });

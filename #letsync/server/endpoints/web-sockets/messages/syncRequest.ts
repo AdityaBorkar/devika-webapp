@@ -1,13 +1,13 @@
 import type { ServerWebSocket } from 'bun';
 
 import { type } from 'arktype';
-import { and, asc, eq, gt } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 
 import type { WebsocketData } from '#letsync/server/endpoints/web-sockets/wsHandler';
 import { db } from '@/lib/db/server'; // TODO: Dependency Injection
 
 const message = type({
-	cursor: 'number',
+	'cursor?': 'Date',
 	name: 'string',
 	refId: 'string',
 	type: '"sync_request"',
@@ -18,7 +18,7 @@ export async function handler(
 	ws: ServerWebSocket<WebsocketData>,
 	msg: typeof message.infer,
 ) {
-	const { tenantId: _tId } = ws.data;
+	const id = ws.data.userId;
 	const { cursor, name, refId } = msg;
 
 	// TODO: First sync all the `cdc_cache` records and let the client fetch what it needs.
@@ -59,20 +59,23 @@ export async function handler(
 		cursor,
 		limit,
 	}: {
-		cursor: number;
+		cursor: Date | undefined;
 		limit: number;
 	}): Promise<void> => {
 		const data_ops = await db.query.cdc.findMany({
 			limit,
 			orderBy: ({ id }) => asc(id),
-			where: ({ tenantId, id }) => and(eq(tenantId, _tId), gt(id, cursor)),
+			where: ({ tenantId, timestamp }) =>
+				cursor
+					? and(eq(tenantId, id), gte(timestamp, cursor))
+					: eq(tenantId, id),
 		});
 
 		const data = { data_ops, name, refId, type: 'data_operations' };
 		ws.send(JSON.stringify(data));
 
-		if (data_ops.length !== limit) {
-			const cursor = data_ops[data_ops.length - 1].id;
+		if (data_ops.length && data_ops.length !== limit) {
+			const cursor = data_ops[data_ops.length - 1].timestamp;
 			await getDataOps({ cursor, limit });
 		}
 	};

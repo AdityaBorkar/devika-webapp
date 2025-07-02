@@ -22,7 +22,7 @@ if (ENABLE_HTTPS && !((await key.exists()) && (await cert.exists()))) {
 // Server configuration
 const server = serve({
 	development: env.NODE_ENV !== 'production' && {
-		console: true,
+		// console: true,
 		hmr: true,
 	},
 	routes: {

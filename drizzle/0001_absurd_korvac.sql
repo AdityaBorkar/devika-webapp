@@ -1,19 +1,23 @@
+CREATE TYPE "public"."task_status" AS ENUM('pending', 'in_progress', 'completed', 'cancelled', 'failed');--> statement-breakpoint
 CREATE TABLE "cdc" (
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"table_name" text NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"action" text NOT NULL,
+	"data" jsonb NOT NULL,
+	"id" text,
+	"item_id" text NOT NULL,
+	"operation" text NOT NULL,
+	"tenant_id" uuid,
+	"timestamp" timestamp NOT NULL,
+	"user_id" uuid NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "cdc_cache" (
 	"client_applied_at" timestamp,
-	"bucket" text NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"cursor" text NOT NULL,
-	"ending_cursor" text NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"starting_cursor" text NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"end" text NOT NULL,
+	"id" text,
+	"start" text NOT NULL,
+	"storage_url" text NOT NULL,
+	"tenant_id" uuid,
+	"timestamp" timestamp NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "client_metadata" (
@@ -23,9 +27,9 @@ CREATE TABLE "client_metadata" (
 --> statement-breakpoint
 CREATE TABLE "client_mutations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"id" serial PRIMARY KEY NOT NULL,
-	"table_name" text NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"mutation_name" text NOT NULL,
+	"request_id" uuid NOT NULL,
+	"status" text NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "client_schemas" (
@@ -87,13 +91,43 @@ CREATE TABLE "verification" (
 	"value" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "tasks" (
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"description" text,
-	"id" text PRIMARY KEY NOT NULL,
+CREATE TABLE "changelog" (
+	"created_at" timestamp NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"cycle_id" text,
+	"notes" text NOT NULL,
+	"summary" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "cycle" (
+	"created_at" timestamp NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"id" text,
 	"name" text NOT NULL,
-	"status" text DEFAULT 'pending' NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL
+	"version_prefix" text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "tasks" (
+	"created_at" timestamp NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"description" text,
+	"id" text,
+	"is_running" boolean DEFAULT false NOT NULL,
+	"name" text NOT NULL,
+	"status" "task_status" DEFAULT 'pending' NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "workspaces" (
+	"created_at" timestamp NOT NULL,
+	"tenant_id" uuid NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"description" text,
+	"id" text,
+	"name" text NOT NULL,
+	"slug" text NOT NULL
 );
 --> statement-breakpoint
 ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

@@ -25,10 +25,6 @@ function handler(ws: WebSocket, msg: typeof message.infer) {
 	for (const data_op of data_ops) {
 		data_ops_map.set(data_op.id, data_op);
 	}
-
-	ws.send(
-		JSON.stringify({ data_ops_map, name, refId, type: 'data_operations' }),
-	);
 }
 
 export const dataOperations = { handler, message };

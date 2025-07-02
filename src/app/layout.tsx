@@ -3,6 +3,7 @@ import './index.css';
 
 import { SyncProvider, useDatabase } from '#letsync/client';
 import { LocalClientProvider } from '#letsync/local-client';
+import { Toaster } from '@/components/Toaster';
 import { useSession } from '@/lib/auth/client';
 import { client } from '@/lib/db/client';
 
@@ -37,6 +38,7 @@ export default function RootLayout() {
 		>
 			<LocalClient>
 				<Outlet />
+				<Toaster />
 			</LocalClient>
 		</SyncProvider>
 	);

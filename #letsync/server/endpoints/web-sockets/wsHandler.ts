@@ -5,20 +5,22 @@ import { ArkErrors } from 'arktype';
 import { mutation } from '#letsync/server/endpoints/web-sockets/messages/mutation';
 import { ping } from '#letsync/server/endpoints/web-sockets/messages/ping';
 import { syncRequest } from '#letsync/server/endpoints/web-sockets/messages/syncRequest';
+import type { Session } from '@/lib/auth/config';
 
 export interface WebsocketData {
-	tenantId: string;
 	userId: string;
+	session: Session;
+	connectionTime: number;
 }
 
 const MessageType = syncRequest.message.or(mutation.message).or(ping.message);
 
 export const wsHandler = {
-	close: (ws: ServerWebSocket<WebsocketData>) => {
-		const { userId, tenantId } = ws.data;
-		console.log(`WebSocket closed for user: ${userId} (tenant: ${tenantId})`);
-	},
-	message: async (ws: ServerWebSocket<WebsocketData>, message: string) => {
+	// close(ws: ServerWebSocket<WebsocketData>) {
+	// 	const { userId } = ws.data;
+	// 	console.log(`WebSocket closed for user: ${userId}`);
+	// },
+	async message(ws: ServerWebSocket<WebsocketData>, message: string) {
 		const data = MessageType(JSON.parse(message));
 		if (data instanceof ArkErrors) {
 			console.log({ data, message });
@@ -30,8 +32,7 @@ export const wsHandler = {
 		if (data.type === 'mutation') await mutation.handler(ws, data);
 		if (data.type === 'sync_request') await syncRequest.handler(ws, data);
 	},
-	// open: async (ws: ServerWebSocket<WebsocketData>) => {
+	// async open(ws: ServerWebSocket<WebsocketData>) {
 	// 	const { userId } = ws.data;
-	// 	ws.send(JSON.stringify({ type: 'connected', userId }));
 	// },
 };

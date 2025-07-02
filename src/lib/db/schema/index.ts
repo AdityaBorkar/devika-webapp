@@ -3,5 +3,8 @@
 
 export * from '#letsync/client/schemas/drizzle-postgres';
 export * from './auth.generated';
+export * from './changelog';
+export * from './cycle';
 export * from './nile';
 export * from './tasks';
+export * from './workspaces';

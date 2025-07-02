@@ -8,6 +8,15 @@ import { env } from '../../env';
 
 export const auth = betterAuth({
 	database: drizzleAdapter(db, { provider: 'pg', schema }),
+	databaseHooks: {
+		user: {
+			create: {
+				after: async ({ id }) => {
+					await db.insert(schema.tenants).values({ id }).returning();
+				},
+			},
+		},
+	},
 	session: {
 		expiresIn: 60 * 60 * 24 * 7, // 7 days
 		updateAge: 60 * 60 * 24, // 1 day
@@ -21,8 +30,6 @@ export const auth = betterAuth({
 	user: {
 		changeEmail: { enabled: true },
 		deleteUser: { enabled: true },
-		// additionalFields: {
-		// }
 	},
 });
 
