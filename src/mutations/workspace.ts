@@ -2,15 +2,16 @@ import { type } from 'arktype';
 
 import { MutationHandler } from '#letsync/mutations';
 import { workspaces } from '@/lib/db/schema/workspaces';
-import { authHandler, schemaHandler } from '@/mutations/_middlewares';
+import { authHandler } from '@/mutations/_middlewares';
 
-const NewWorkspaceSchema = type({
+const schema = type({
 	account_name: 'string',
 	repo_name: 'string',
 });
 
-const workspaceMutation = new MutationHandler()
+export const $createWorkspace = MutationHandler()
 	.setName('workspace:create')
+	.setParams(schema)
 	.middleware(authHandler)
 	.handler(async ({ validatedData, db }) => {
 		const [workspace] = await db
@@ -24,9 +25,3 @@ const workspaceMutation = new MutationHandler()
 			.returning();
 		return workspace;
 	});
-
-// Add schema middleware
-const schemaMiddleware = schemaHandler(NewWorkspaceSchema);
-workspaceMutation.middleware(schemaMiddleware);
-
-export const $createWorkspace = workspaceMutation.toCallable();

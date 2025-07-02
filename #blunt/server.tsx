@@ -37,9 +37,9 @@ const server = serve({
 	// @ts-expect-error
 	tls: { cert, key },
 	websocket: {
-		close: syncHandler_ws.close,
+		// close: syncHandler_ws.close,
 		message: syncHandler_ws.message,
-		open: syncHandler_ws.open,
+		// open: syncHandler_ws.open,
 	},
 });
 

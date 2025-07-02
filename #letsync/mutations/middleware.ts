@@ -1,58 +1,41 @@
-import type { BunRequest } from 'bun';
+import type { MutationContext, MutationMiddleware } from './mutation';
 
-export class MiddlewareHandler {
-	private clientFn?: (
-		data: any,
-		{ setContext }: { setContext: (updates: any) => void },
-	) => void | Promise<void>;
-	private serverFn?: (
-		request: BunRequest,
-		{ setContext }: { setContext: (updates: any) => void },
-	) => void | Promise<void>;
+export type MiddlewareComposer = <T extends MutationContext>(
+	...middlewares: Array<MutationMiddleware<any, T>>
+) => MutationMiddleware<any, T>;
 
-	onClient(
-		fn: (
-			data: any,
-			{ setContext }: { setContext: (updates: any) => void },
-		) => void | Promise<void>,
-	) {
-		this.clientFn = fn;
-		return this;
-	}
-
-	onServer(
-		fn: (
-			request: BunRequest,
-			{ setContext }: { setContext: (updates: any) => void },
-		) => void | Promise<void>,
-	) {
-		this.serverFn = fn;
-		return this;
-	}
-
-	async execute(
-		data: any,
-		context: { setContext: (updates: any) => void },
-		env: 'client' | 'server' = typeof window !== 'undefined' ? 'client' : 'server',
-		request?: BunRequest,
-	): Promise<void> {
-		if (env === 'client' && this.clientFn) {
-			await this.clientFn(data, context);
-		} else if (env === 'server' && this.serverFn && request) {
-			await this.serverFn(request, context);
-		}
-	}
-}
-
-// Helper function to convert MiddlewareHandler to mutation middleware
-export function middlewareToMutation(
-	middlewareHandler: MiddlewareHandler,
-): (
-	data: any,
-	context: { setContext: (updates: any) => void },
-) => Promise<void> {
+export const composeMiddleware: MiddlewareComposer = (...middlewares) => {
 	return async (data, context) => {
-		const env = typeof window !== 'undefined' ? 'client' : 'server';
-		await middlewareHandler.execute(data, context, env);
+		for (const middleware of middlewares) {
+			await middleware(data, context);
+		}
 	};
-}
+};
+
+export const createConditionalMiddleware = <T extends MutationContext>(
+	condition: (data: any, context: T) => boolean | Promise<boolean>,
+	middleware: MutationMiddleware<any, T>,
+): MutationMiddleware<any, T> => {
+	return async (data, context) => {
+		const shouldRun = await condition(data, context);
+		if (shouldRun) {
+			await middleware(data, context);
+		}
+	};
+};
+
+export const createEnvironmentMiddleware = <T extends MutationContext>(
+	clientMiddleware?: MutationMiddleware<any, T>,
+	serverMiddleware?: MutationMiddleware<any, T>,
+): MutationMiddleware<any, T> => {
+	return async (data, context) => {
+		const env =
+			context.env || (typeof window !== 'undefined' ? 'client' : 'server');
+
+		if (env === 'client' && clientMiddleware) {
+			await clientMiddleware(data, context);
+		} else if (env === 'server' && serverMiddleware) {
+			await serverMiddleware(data, context);
+		}
+	};
+};

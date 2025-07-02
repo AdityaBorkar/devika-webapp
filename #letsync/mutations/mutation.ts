@@ -1,149 +1,164 @@
-// Simplified mutation system based on middleware pattern
-/** biome-ignore-all lint/suspicious/noExplicitAny: THIS IS A LIBRARY */
+import type { Type } from 'arktype';
 
-import type { BunRequest } from 'bun';
-
-export interface MutationContext {
+export interface BaseMutationContext {
 	db: any;
-	session?: any;
+	env: 'client' | 'server';
+}
+
+export interface MutationContext extends BaseMutationContext {
+	session?: {
+		user?: {
+			id: string;
+			email?: string;
+			name?: string;
+		};
+	};
 	validatedData?: any;
 	[key: string]: any;
 }
 
-export interface MutationChain {
-	setName: (name: string) => MutationChain;
-	middleware: (
-		fn: (
-			data: any,
-			context: MutationContext & {
-				setContext: (updates: Partial<MutationContext>) => void;
-			},
-		) => void | Promise<void>,
-	) => MutationChain;
-	handler: (
-		fn: (context: MutationContext & { data: any }) => any | Promise<any>,
-	) => MutationChain;
-	onSuccess: (fn: (result: { data: any }) => void) => MutationChain;
-	onError: (fn: (error: { error: any }) => void) => MutationChain;
-	execute: (
-		data?: any,
-		options?: { env?: 'client' | 'server'; context?: Partial<MutationContext> },
-	) => Promise<{ success: boolean; data?: any; error?: any }>;
-	// Make it callable
-	(
-		data?: any,
-		options?: { env?: 'client' | 'server'; context?: Partial<MutationContext> },
-	): Promise<{ success: boolean; data?: any; error?: any }>;
-}
-
-export type Middleware = (
-	request: BunRequest,
-	{ setContext }: { setContext: (updates: Partial<MutationContext>) => void },
+export type MutationMiddleware<TInput = any, TContext = MutationContext> = (
+	data: TInput,
+	context: TContext & {
+		setContext: <T extends Partial<TContext>>(updates: T) => void;
+	},
 ) => void | Promise<void>;
 
-// Helper functions for database access
-async function getServerDb() {
-	try {
-		// Dynamically import server database
-		const { db } = await import('@/lib/db/server');
-		return db;
-	} catch (error) {
-		console.warn('Could not load server database:', error);
-		return null;
-	}
+export type MutationHandlerFn<
+	TInput = any,
+	TContext = MutationContext,
+	TResult = any,
+> = (context: TContext & { data: TInput }) => TResult | Promise<TResult>;
+
+type InferArkType<T extends Type> = T extends Type<infer U> ? U : any;
+
+interface MutationExecuteResult<T = any> {
+	success: boolean;
+	data?: T;
+	error?: string;
 }
 
-async function getClientDb() {
+async function getDatabase(env: 'client' | 'server') {
 	try {
-		// Dynamically import client database  
+		if (env === 'server') {
+			const { db } = await import('@/lib/db/server');
+			return db;
+		}
 		const { db } = await import('@/lib/db/client');
 		return db;
 	} catch (error) {
-		console.warn('Could not load client database:', error);
+		console.warn(`Could not load ${env} database:`, error);
 		return null;
 	}
 }
 
-// Create a callable MutationHandler function
-export function MutationHandler(): MutationChain {
-	const handler = function(
-		data?: any,
-		options?: { env?: 'client' | 'server'; context?: Partial<MutationContext> },
-	): Promise<{ success: boolean; data?: any; error?: any }> {
-		return handler.execute(data, options);
-	} as any;
+async function validateWithSchema<T extends Type>(
+	schema: T,
+	data: any,
+): Promise<InferArkType<T>> {
+	const result = schema(data);
+	if (
+		result instanceof Error ||
+		(result &&
+			typeof result === 'object' &&
+			' arkKind' in result &&
+			result[' arkKind'] === 'errors')
+	) {
+		throw new Error(`Validation failed: ${result.toString()}`);
+	}
+	return result as InferArkType<T>;
+}
 
-	// Add all the properties and methods
-	handler.name = '';
-	handler.middlewares = [];
-	handler._handler = undefined;
-	handler._onSuccess = undefined;
-	handler._onError = undefined;
+export class MutationBuilder<
+	TData = any,
+	TContext extends MutationContext = MutationContext,
+> {
+	public _name = '';
+	public _schema?: Type;
+	public _middlewares: Array<MutationMiddleware<any, any>> = [];
+	public _handler?: MutationHandlerFn<TData, TContext>;
+	public _onSuccess?: (result: { data: any }) => void;
+	public _onError?: (error: { error: string }) => void;
+	public _validationCache = new Map<string, any>();
 
-	handler.setName = function(name: string) {
-		this.name = name;
+	setName(name: string): this {
+		this._name = name;
 		return this;
-	};
+	}
 
-	handler.middleware = function(fn: any) {
-		this.middlewares.push(fn);
-		return this;
-	};
+	setParams<TSchema extends Type>(
+		schema: TSchema,
+	): MutationBuilder<
+		InferArkType<TSchema>,
+		TContext & { validatedData: InferArkType<TSchema> }
+	> {
+		this._schema = schema;
+		return this as any;
+	}
 
-	handler.handler = function(fn: any) {
+	middleware<TNewContext extends TContext = TContext>(
+		fn: MutationMiddleware<TData, TContext>,
+	): MutationBuilder<TData, TNewContext> {
+		this._middlewares.push(fn);
+		return this as any;
+	}
+
+	handler<TResult = any>(
+		fn: MutationHandlerFn<TData, TContext, TResult>,
+	): this {
 		this._handler = fn;
 		return this;
-	};
+	}
 
-	handler.onSuccess = function(fn: any) {
+	onSuccess(fn: (result: { data: any }) => void): this {
 		this._onSuccess = fn;
 		return this;
-	};
+	}
 
-	handler.onError = function(fn: any) {
+	onError(fn: (error: { error: string }) => void): this {
 		this._onError = fn;
 		return this;
-	};
+	}
 
-	handler.execute = async function(
-		data?: any,
-		options?: { env?: 'client' | 'server'; context?: Partial<MutationContext> },
-	): Promise<{ success: boolean; data?: any; error?: any }> {
+	async execute(
+		data: TData,
+		options?: { env?: 'client' | 'server'; context?: Partial<TContext> },
+	): Promise<MutationExecuteResult> {
 		try {
-			// Get the environment context
-			const env = options?.env || (typeof window !== 'undefined' ? 'client' : 'server');
-			
-			// Create base context with database
-			let baseContext: MutationContext = {
-				db: null, // Will be injected based on environment
+			const env =
+				options?.env || (typeof window !== 'undefined' ? 'client' : 'server');
+
+			const context = {
+				db: await getDatabase(env),
+				env,
 				...options?.context,
-			};
+			} as TContext;
 
-			// Inject database based on environment
-			if (env === 'server') {
-				// Server-side database injection
-				baseContext.db = await getServerDb();
-			} else {
-				// Client-side database injection
-				baseContext.db = await getClientDb();
-			}
-
-			const context = { ...baseContext };
 			const contextWithSetter = {
 				...context,
-				setContext: (updates: Partial<MutationContext>) => {
+				setContext: <T extends Partial<TContext>>(updates: T) => {
 					Object.assign(context, updates);
 				},
 			};
 
-			// Run middleware chain
-			for (const middleware of this.middlewares) {
+			if (this._schema && data !== undefined) {
+				const cacheKey = JSON.stringify(data);
+				let validatedData = this._validationCache.get(cacheKey);
+
+				if (!validatedData) {
+					validatedData = await validateWithSchema(this._schema, data);
+					this._validationCache.set(cacheKey, validatedData);
+				}
+
+				contextWithSetter.setContext({ validatedData } as any);
+			}
+
+			for (const middleware of this._middlewares) {
 				await middleware(data, contextWithSetter);
 			}
 
-			// Execute handler
 			if (!this._handler) {
-				throw new Error('No handler defined for mutation');
+				throw new Error(`No handler defined for mutation: ${this._name}`);
 			}
 
 			const result = await this._handler({ ...context, data });
@@ -155,11 +170,24 @@ export function MutationHandler(): MutationChain {
 			this._onError?.({ error: errorMessage });
 			return { error: errorMessage, success: false };
 		}
-	};
-
-	return handler;
+	}
 }
 
-export function createMutation(params?: any): MutationChain {
-	return MutationHandler();
+export function MutationHandler<
+	TData = any,
+	TContext extends MutationContext = MutationContext,
+>(): MutationBuilder<TData, TContext> {
+	return new MutationBuilder<TData, TContext>();
 }
+
+export function createMutation<
+	TData = any,
+	TContext extends MutationContext = MutationContext,
+>(): MutationBuilder<TData, TContext> {
+	return new MutationBuilder<TData, TContext>();
+}
+
+export type MutationChain<
+	TData = any,
+	TContext extends MutationContext = MutationContext,
+> = MutationBuilder<TData, TContext>;
