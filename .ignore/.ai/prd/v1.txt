@@ -1,0 +1,143 @@
+# Overview  
+This product is an AI Developer Assistant application designed to streamline the workflow of developers working with AI models and related tools, particularly Model Context Protocol (MCP) servers. It solves the problem of managing project tasks, tracking dependencies, discovering useful tools (MCP servers), and maintaining project standards within a single, integrated environment. It's aimed at individual developers or small teams working on AI-centric projects who need a central hub for project organization and context management. The value lies in reducing context switching, improving task tracking clarity, facilitating the discovery and integration of MCP tools, and ensuring project consistency.
+
+# Core Features  
+Here's a breakdown of the planned features corresponding to the application's endpoints:
+
+1.  **Dashboard (`/dashboard`)**
+    *   **What:** Provides a high-level, at-a-glance overview of the project's status.
+    *   **Why:** Allows users to quickly understand the current state, upcoming deadlines, and potential blockers.
+    *   **How:** Displays widgets summarizing key information: count of active tasks, current cycle progress (e.g., tasks completed/total), tasks due soon, potentially recent file changes or MCP server statuses. Requires backend aggregation of data from other modules (Tasks, Cycles).
+
+2.  **Repository (`/repository`)**
+    *   **What:** Lists project dependencies (packages, libraries).
+    *   **Why:** Provides visibility into the project's software bill of materials and helps manage dependencies.
+    *   **How:** Scans configured manifest files (e.g., `requirements.txt`, `package.json`) in the project workspace. Displays package names and versions. Future enhancements could include linking to documentation or checking for outdated versions.
+
+3.  **Tasks (`/tasks`, `/tasks/:id`)**
+    *   **What:** Comprehensive task management system supporting tasks, subtasks, and various views.
+    *   **Why:** Centralizes project work items, allowing for clear planning, execution, and tracking.
+    *   **How:**
+        *   `/tasks`: Displays tasks in a configurable view (default: Linear-style list). Supports CRUD operations, filtering (by status, cycle, assignee), sorting, and basic search. Hierarchical display of subtasks.
+        *   `/tasks/:id`: Shows detailed information for a single task (title, description, status, priority, assignee, cycle, parent/subtasks, linked files/MCPs, dates). Allows editing and includes a simple activity log/comment section.
+        *   Data Model: `Task` with fields for `id`, `title`, `description` (Markdown support), `status`, `priority`, `assignee`, `cycle_id`, `parent_task_id`, `created_at`, `updated_at`, `due_date`, `linked_resources`.
+
+4.  **Cycles (`/cycles`)**
+    *   **What:** Manages iteration cycles or sprints for organizing task completion.
+    *   **Why:** Enables time-boxed development and helps organize tasks into manageable work periods.
+    *   **How:** Allows CRUD operations for cycles. Displays a list of cycles with names, start/end dates, status (planned, active, completed), and associated goals. Tasks can be assigned to cycles.
+    *   Data Model: `Cycle` with `id`, `name`, `goal`, `start_date`, `end_date`, `status`.
+
+5.  **Project Rules (`/project-rules`)**
+    *   **What:** Displays project-specific guidelines or rules (e.g., for AI interaction).
+    *   **Why:** Keeps important project conventions easily accessible to the team.
+    *   **How:** Reads rules from a designated configuration file (e.g., `.ai-dev-rules.md`) or potentially a database table. Displays the rules. Future enhancement: editing capability.
+    *   Data Model: `ProjectRule` with `id`, `rule_content` (text), `source`.
+
+6.  **Project MCP Servers (`/mcp`)**
+    *   **What:** Lists MCP servers specifically configured and used within *this* project.
+    *   **Why:** Provides visibility into the AI context tools integrated with the project.
+    *   **How:** Reads configuration from a local project file (e.g., `.mcp-config.json`) or database. Displays server name, description, status (configured, potentially active/inactive if checkable).
+    *   Data Model: `ProjectMCPServer` with `id`, `name`, `description`, `source_url`, `local_path`, `status`, `config_details`.
+
+7.  **Explore MCP Servers (`/explore/mcp`)**
+    *   **What:** Allows discovery of community-provided MCP servers from an external source.
+    *   **Why:** Facilitates finding and potentially integrating new tools to enhance AI capabilities.
+    *   **How:** Fetches the `README.md` from the `punkpeye/awesome-mcp-servers` GitHub repository via the GitHub API. Parses the Markdown content to extract server listings (name, description, language, link). Displays the list with search and filtering capabilities (client-side initially). Includes caching to avoid excessive API calls.
+
+8.  **Settings (`/settings`)**
+    *   **What:** Configuration area for the application and project specifics.
+    *   **Why:** Allows users to customize the application's behavior and link it to their project structure.
+    *   **How:** Provides UI fields to set paths for task data storage (if file-based), manifest files for the repository scanner, project rules file, project MCP config file, etc.
+
+# User Experience  
+*   **User Personas:** Primarily targets individual AI/ML developers or developers on small teams who frequently interact with LLMs, build agents, or utilize MCP servers. They value efficiency, clear organization, and easy access to relevant tools and project context.
+*   **Key User Flows:**
+    *   *Task Management:* Creating a task -> Assigning it to a cycle -> Updating its status -> Viewing it on the dashboard/list -> Referencing linked resources (files/MCPs).
+    *   *MCP Discovery & Integration:* Browsing `/explore/mcp` -> Finding a relevant server -> (Manually) Adding its configuration to the project -> Viewing it in `/mcp`.
+    *   *Project Setup:* Configuring paths in `/settings` upon first use or for a new project.
+*   **UI/UX Considerations:**
+    *   Clean, intuitive navigation (sidebar likely).
+    *   Responsive design for various screen sizes (desktop focus initially).
+    *   Clear visual hierarchy, especially in task lists and dashboard widgets.
+    *   Consistent design language across all views.
+    *   Good feedback on actions (saving, deleting, fetching data).
+    *   Use of familiar patterns (e.g., Linear-style task lists, Kanban boards as future enhancement).
+    *   Markdown support for task descriptions.
+
+# Technical Architecture  
+*   **System Components:**
+    *   *Backend:* API server (e.g., Python/FastAPI or Node.js/Express) handling business logic, data persistence, and serving the frontend.
+    *   *Frontend:* Single Page Application (SPA) (e.g., React, Vue, Svelte) providing the user interface.
+    *   *Database:* Relational database (e.g., SQLite for simplicity/portability, PostgreSQL for robustness) for storing Tasks, Cycles, Project MCPs, Rules (optional). Or potentially use structured files (JSON/YAML/MD) within the project directory (e.g., `.ai-dev-data/`). Let's start with SQLite located within a project-specific hidden folder like `.ai-developer/`.
+    *   *External Integration:* GitHub API client for fetching the `awesome-mcp-servers` README.
+*   **Data Models:** (As detailed in Core Features section)
+    *   `Task`, `Cycle`, `ProjectRule`, `ProjectMCPServer`.
+    *   Implicit models for Repository Packages (derived) and Community MCP Servers (parsed).
+*   **APIs and Integrations:**
+    *   Internal RESTful or GraphQL API between frontend and backend.
+    *   GitHub REST API (read-only access for public repo).
+*   **Infrastructure Requirements:**
+    *   Local development environment (Node.js/Python runtime).
+    *   Potential for future containerization (Docker). Deployment needs TBD (likely desktop app packaging initially, e.g., Electron, or simple local web server).
+
+# Development Roadmap  
+Focus on delivering core value quickly and iteratively adding features.
+
+*   **Phase 1: Foundation & Core Task/MCP Management (MVP)**
+    *   Basic backend setup with API structure.
+    *   SQLite database setup and schema definition (`Task`, `Cycle`).
+    *   Basic frontend setup with navigation.
+    *   Task CRUD functionality (List + Detail views, essential fields only).
+    *   Cycle CRUD functionality (List view, linking tasks).
+    *   Explore MCP: Fetch, parse (basic Markdown parsing), display community list. Basic client-side search.
+    *   Project MCP: Display servers from a static JSON config file (`.ai-developer/mcp-config.json`).
+    *   Basic Settings page to view (not yet edit) configured paths.
+*   **Phase 2: Enhancing Usability & Core Features**
+    *   Dashboard implementation with basic widgets (task counts, cycle status).
+    *   Repository scanner implementation (read common manifest files).
+    *   Project Rules display (read from `.ai-developer/rules.md`).
+    *   Improved Task views (filtering, sorting, subtask hierarchy).
+    *   Markdown rendering for task descriptions.
+    *   Editable Settings page.
+    *   Improved parsing and display for Explore MCP (e.g., handling formatting variations, adding filters for language/type).
+    *   Add CRUD for Project MCP servers (editing the JSON config file via UI).
+*   **Phase 3: Advanced Features & Polish**
+    *   Advanced Task views (Kanban board).
+    *   Task activity log/comments.
+    *   Dashboard enhancements (more widgets, customization).
+    *   Repository enhancements (outdated checks, doc links).
+    *   Project Rules editing.
+    *   Potential integrations (e.g., basic Git info).
+    *   UI polish, performance optimizations, error handling improvements.
+    *   Add "Add to Project" functionality from Explore MCP to Project MCP list.
+
+# Logical Dependency Chain
+1.  **Backend & DB Setup:** Establish API structure, database connection, basic ORM models (`Task`, `Cycle`).
+2.  **Frontend Setup:** Basic SPA structure, routing, main layout/navigation.
+3.  **Task CRUD:** Implement API endpoints and frontend views for creating, reading, updating, deleting tasks (minimal fields).
+4.  **Cycle CRUD:** Implement API/frontend for cycles and linking tasks.
+5.  **Explore MCP (Read-only):** Implement GitHub API fetch, basic Markdown parsing, frontend display. Needs API endpoint to serve parsed data to frontend.
+6.  **Project MCP (Read-only):** Implement reading from config file and frontend display. Needs API endpoint.
+7.  **Settings (Read-only):** Display configured paths.
+8.  **Dashboard (Basic):** Aggregate data from Tasks/Cycles via backend endpoints.
+9.  **Repository Scanner:** Implement file scanning logic on the backend, create API endpoint, display on frontend.
+10. **Project Rules (Read-only):** Read file, create API endpoint, display on frontend.
+11. **Enhancements:** Build upon existing CRUD operations and displays (filtering, sorting, editing settings, richer views, etc.).
+
+# Risks and Mitigations  
+*   **Risk:** Parsing `awesome-mcp-servers` README is fragile and might break if the repo structure changes.
+    *   **Mitigation:** Implement robust parsing logic with error handling. Log parsing errors. Consider contributing a structured data file (e.g., JSON) to the upstream repo as a long-term solution or creating a dedicated API if feasible. Regularly test the parsing against the live file.
+*   **Risk:** Scope creep - adding too many features too quickly.
+    *   **Mitigation:** Stick strictly to the phased roadmap. Prioritize core functionality for the MVP. Evaluate new feature requests against the core product goals.
+*   **Risk:** Choosing the right persistence mechanism (files vs. DB).
+    *   **Mitigation:** Start with SQLite within a project folder (`.ai-developer/database.db`) for simplicity and portability. This balances ease of setup with relational capabilities needed for tasks/cycles. Can migrate later if necessary.
+*   **Risk:** Keeping frontend/backend dependencies up-to-date and secure.
+    *   **Mitigation:** Use dependency management tools (npm/pip). Regularly schedule dependency update checks and testing. Use tools like Dependabot if hosted on GitHub.
+*   **Risk:** UI complexity for task views (list, board, etc.).
+    *   **Mitigation:** Start with the simplest view (list). Use established UI libraries/components that offer complex views like Kanban boards to avoid building from scratch. Defer complex views to later phases.
+
+# Appendix  
+*   Target `awesome-mcp-servers` repo: <https://github.com/punkpeye/awesome-mcp-servers>
+*   Consider Linear app (<https://linear.app>) as UI/UX inspiration for task management.
+*   Initial data storage location: `.ai-developer/` folder within the user's project root. Contains `database.db`, `mcp-config.json`, `rules.md` (optional).

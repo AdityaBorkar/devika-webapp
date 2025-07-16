@@ -30,6 +30,5 @@ certs/
 .cursor
 .devika
 .gemini
+.blunt
 .vercel
-
-.ignore

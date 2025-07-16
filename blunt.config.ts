@@ -1,7 +1,3 @@
-export default {
-	server: {
-		host: '0.0.0.0',
-		https: true,
-		port: 3000,
-	},
-};
+import type { Config } from 'blunt/types';
+
+export default {} satisfies Partial<Config>;

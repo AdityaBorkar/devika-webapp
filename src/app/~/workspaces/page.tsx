@@ -3,7 +3,6 @@
 import { Suspense } from 'react';
 
 import { signOut, useSession } from '@/lib/auth/client';
-import { $createTask } from '@/mutations/tasks';
 
 export default function WorkspacesPage() {
 	const session = useSession();
@@ -16,11 +15,11 @@ export default function WorkspacesPage() {
 
 	return (
 		<div>
-			<form action={$createTask}>
+			{/* <form action={$createTask}>
 				<input name="account_name" placeholder="AdityaBorkar" type="text" />
 				<input name="repo_name" placeholder="devika-v2" type="text" />
 				<button type="submit">Create Workspace</button>
-			</form>
+			</form> */}
 
 			<Suspense fallback={<div>Loading...</div>}>
 				{/* <WorkspaceList list={workspaces} /> */}

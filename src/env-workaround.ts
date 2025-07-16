@@ -1,3 +1,3 @@
 export const env_workaround = {
-	BASE_URL: 'https://localhost:3000',
+	BASE_URL: 'http://localhost:3000',
 };

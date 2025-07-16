@@ -36,5 +36,16 @@
 2. Task Management can happen on GitHub Projects / Devika / Linear. SELECT TASK STORAGE.
 3. Select your IDE (for opening the code editor).
 4. Create a Workspace.
+5. Integrate with WakeTime API and ccusage and Cursor Analytics and gemini analytics
 
 clause # use shadcn/ui components and motion.dev library for animations.
+
+https://kiro.dev/blog/introducing-kiro/
+
+https://repost.aws/articles/AROjWKtr5RTjy6T2HbFJD_Mw/%F0%9F%91%BB-kiro-agentic-ai-ide-beyond-a-coding-assistant-full-stack-software-development-with-spec-driven-ai
+
+https://www.reddit.com/r/ClaudeAI/comments/1lwjebe/v2_release_claude_code_development_kit_now_with/
+
+https://github.com/davidkimai/Context-Engineering
+
+https://bearclaude.specstory.com/

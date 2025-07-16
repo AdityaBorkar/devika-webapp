@@ -15,7 +15,13 @@
 							":BLANK_LINE:",
 							[":PACKAGE:", ":PACKAGE_WITH_PROTOCOL:"],
 							":BLANK_LINE:",
-							["@/components", "@/lib", "@/hooks", "@/assets"]
+							["@/components", "@/lib", "@/hooks", "@/assets"],
+							":BLANK_LINE:",
+							[
+								"../utils/test-helpers",
+								"../utils/mock-fs",
+								"../utils/test-fixtures"
+							]
 						]
 					}
 				},
@@ -28,6 +34,14 @@
 		"formatter": {
 			"enabled": true
 		}
+	},
+	"files": {
+		"includes": [
+			"**/*",
+			"!node_modules/**/*",
+			"!tests/examples/**/*",
+			"!coverage/**/*"
+		]
 	},
 	"html": {
 		"formatter": {
@@ -67,11 +81,12 @@
 			"performance": "on",
 			"security": "on",
 			"style": {
-				"recommended": true,
-				"useComponentExportOnlyModules": "off"
+				"noNonNullAssertion": "off",
+				"recommended": true
 			},
 			"suspicious": {
-				"noReactSpecificProps": "off",
+				"noConsole": "off",
+				"noExplicitAny": "off",
 				"recommended": true
 			}
 		}

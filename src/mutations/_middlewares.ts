@@ -6,7 +6,7 @@ import { getSession as getSessionOnServer } from '@/lib/auth/server';
 
 // Simplified auth middleware - works directly with MutationHandler
 
-export const authHandler = async (data, { setContext }) => {
+export const authHandler = async (_data, { setContext }) => {
 	// Detect environment
 	const env = typeof window !== 'undefined' ? 'client' : 'server';
 
@@ -20,7 +20,7 @@ export const authHandler = async (data, { setContext }) => {
 export const serverAuthHandler = (
 	request: BunRequest,
 ): MutationMiddleware<any, MutationContext> => {
-	return async (data, { setContext }) => {
+	return async (_data, { setContext }) => {
 		const session = await getSessionOnServer({ headers: request.headers });
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
@@ -33,7 +33,7 @@ export const serverAuthHandler = (
 export const universalAuthHandler: MutationMiddleware<
 	any,
 	MutationContext
-> = async (data, context) => {
+> = async (_data, context) => {
 	const actual_env = typeof window !== 'undefined' ? 'client' : 'server';
 	const env = context.env || actual_env;
 	console.warn('detected env', actual_env, 'forced env', env);

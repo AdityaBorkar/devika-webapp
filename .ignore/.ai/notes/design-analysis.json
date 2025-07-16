@@ -1,0 +1,52 @@
+{
+	"design_system": {
+		"color_implementation": "CSS Variables with Semantic Color Names",
+		"evidence": [
+			"components.json - Shows theme configuration with baseColor set to 'zinc'",
+			"src/contexts/StyleConfigContext.tsx - Manages color and typography system",
+			"src/components/ui/button.tsx - Uses semantic color tokens (primary, destructive, etc.)"
+		],
+		"theme_configuration": "Tailwind Theme Extension",
+		"typography_system": "Tailwind Typography with Font Family Extension"
+	},
+	"layout_architecture": {
+		"evidence": [
+			"src/app/(app)/layout.tsx - Uses grid-cols-[16rem_auto] for app layout",
+			"src/app/(app)/prd/layout.tsx - Shows nested grid layouts with gap utilities",
+			"src/components/layouts/NavLayout.tsx - Demonstrates flex layouts for navigation"
+		],
+		"grid_system": "Tailwind Grid and Flexbox",
+		"page_composition": "Grid-based Layout with App Directory Structure",
+		"spacing_pattern": "Tailwind Gap Utilities with Consistent Values"
+	},
+	"state_management": {
+		"evidence": [
+			"src/lib/stores/app.ts - Uses Jotai atoms for state management",
+			"src/components/ui/form.tsx - Implements React Hook Form with validation",
+			"package.json - Dependencies include jotai, react-hook-form, and zod"
+		],
+		"form_handling": "React Hook Form with Zod validation",
+		"interaction_patterns": "React Hooks with Context API",
+		"primary_approach": "Jotai Atoms"
+	},
+	"styling_implementation": {
+		"approach": "Utility Classes with Tailwind CSS",
+		"evidence": [
+			"src/lib/utils.ts - Uses clsx and tailwind-merge to manage class composition",
+			"src/components/ui/form.tsx - Demonstrates class composition with Tailwind",
+			"src/components/layouts/NavLayout.tsx - Shows responsive design patterns with sm: prefixes"
+		],
+		"naming_convention": "Tailwind with cn() utility for conditional classes",
+		"responsive_technique": "Tailwind breakpoints (sm, md, lg)"
+	},
+	"ui_component_system": {
+		"component_pattern": "Composite Components",
+		"design_tokens": "CSS Variables with Tailwind Theme Extension",
+		"evidence": [
+			"src/components/ui/button.tsx - Uses Radix UI Slot and class-variance-authority",
+			"src/components/ui/dialog.tsx - Implements DialogPrimitive from @radix-ui/react-dialog",
+			"components.json - Configuration for shadcn UI (Radix-based component system)"
+		],
+		"primary_library": "Radix UI"
+	}
+}

@@ -1,5 +1,5 @@
 // ! WORKAROUND for BUG: https://github.com/oven-sh/bun/issues/20071 & https://github.com/oven-sh/bun/issues/15032
-function handlePgliteFiles(req: Request) {
+function _handlePgliteFiles(req: Request) {
 	const url = new URL(req.url);
 	const filePath = url.pathname.replace('/pglite/', '');
 	const file = Bun.file(`node_modules/@electric-sql/pglite/dist/${filePath}`);
@@ -18,4 +18,8 @@ function handlePgliteFiles(req: Request) {
 			'Cross-Origin-Opener-Policy': 'same-origin',
 		},
 	});
+}
+
+export function GET(req: Request) {
+	return _handlePgliteFiles(req);
 }
